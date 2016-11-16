@@ -25,6 +25,10 @@ double Carro::getAngCanhao() {
 	return _angCanhao;
 }
 
+double Carro::getAngCarro() {
+	return _angCarro;
+}
+
 Circulo Carro::getCirculo() {
 	return *_circ;
 }

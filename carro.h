@@ -82,6 +82,7 @@ class Carro {
 		bool isPlayer() {
 			return _isPlayer;
 		};
+		double getAngCarro();
 		double getAngCanhao();
 		Circulo getCirculo();
 		Ponto getPosicao();

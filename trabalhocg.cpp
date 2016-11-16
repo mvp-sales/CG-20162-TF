@@ -9,9 +9,13 @@ list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
 
+OBJ* internal;
+
 //Dimensões da janela
 double janelaLarg;
 double janelaAlt;
+double nearZ = 0.999;
+double farZ = 100;
 
 //Atributos dos inimigos
 EnemyAttr* enemyAttributes;
@@ -31,7 +35,6 @@ void * font = GLUT_BITMAP_9_BY_15;
 
 //Câmera
 int toggleCam = 0;
-int camAngle = 60;
 
 //Timer
 double timerSeg = 0;
@@ -40,16 +43,73 @@ double timerHour = 0;
 GLdouble previousTime = 0;
 GLdouble startTime = 0;
 
-void changeCamera(int angle, int w, int h) {
-    glMatrixMode (GL_PROJECTION);
-
-    glLoadIdentity ();
-
-    gluPerspective (angle, 
-           (GLfloat) w / (GLfloat) h, 1.0, 5.0);
-
-    glMatrixMode (GL_MODELVIEW);
+void makeIdentityf(GLfloat m[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            m[i][j] = i == j;
+        }
+    }
 }
+
+void normalize(float o[3]) {
+    double norm = sqrt(o[0]*o[0]+o[1]*o[1]+o[2]*o[2]);
+    o[0] /= norm;
+    o[1] /= norm;
+    o[2] /= norm;   
+}
+
+void crossProduct(
+        float u[3], 
+        float v[3], 
+        float o[3])
+{
+    o[0] = u[1]*v[2] - u[2]*v[1];
+    o[1] = u[2]*v[0] - u[0]*v[2];
+    o[2] = u[0]*v[1] - u[1]*v[0];
+}
+
+void lookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble centerx,
+          GLdouble centery, GLdouble centerz, GLdouble upx, GLdouble upy,
+          GLdouble upz)
+{
+    float forward[3], side[3], up[3];
+    GLfloat m[4][4];
+
+    forward[0] = centerx - eyex;
+    forward[1] = centery - eyey;
+    forward[2] = centerz - eyez;
+
+    up[0] = upx;
+    up[1] = upy;
+    up[2] = upz;
+
+    normalize(forward);
+
+    /* Side = forward x up */
+    crossProduct(forward, up, side);
+    normalize(side);
+
+    /* Recompute up as: up = side x forward */
+    crossProduct(side, forward, up);
+
+    makeIdentityf(m);
+    m[0][0] = side[0];
+    m[1][0] = side[1];
+    m[2][0] = side[2];
+
+    m[0][1] = up[0];
+    m[1][1] = up[1];
+    m[2][1] = up[2];
+
+    m[0][2] = -forward[0];
+    m[1][2] = -forward[1];
+    m[2][2] = -forward[2];
+
+    glMultMatrixf(&m[0][0]);
+    glTranslated(-eyex, -eyey, -eyez);
+}
+
+
 
 void printTimer(GLfloat x, GLfloat y)
 {
@@ -68,7 +128,6 @@ void printTimer(GLfloat x, GLfloat y)
 		    //Define the position to start printing
 		    glRasterPos2f(x, y);
 		    //Print  the first Char with a certain font
-		    //glutBitmapLength(font,(unsigned char*)str);
 		    tmpStr = str;
 		    //Print each of the other Char at time
 		    while( *tmpStr ){
@@ -91,7 +150,6 @@ void printEnd(GLfloat x, GLfloat y)
     //Define the position to start printing
     glRasterPos2f(x, y);
     //Print  the first Char with a certain font
-    //glutBitmapLength(font,(unsigned char*)str);
     tmpStr = str;
     //Print each of the other Char at time
     while( *tmpStr ){
@@ -101,9 +159,7 @@ void printEnd(GLfloat x, GLfloat y)
 
 }
 
-void displayGame() {
-	//Centraliza a posição dos elementos na tela
-	glTranslatef(janelaLarg/2, janelaAlt/2, 0);
+void displayGame2D() {
 
 	//Desenha a pista externa
 	glPushMatrix();
@@ -114,7 +170,57 @@ void displayGame() {
 	//Desenha a pista interna
 	glPushMatrix();
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
+	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
 	desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
+	glPopMatrix();
+
+	//Desenha a pista
+	glPushMatrix();
+	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0);
+	desenhaRetangulo(linha->largura, linha->altura, linha->fill.r, linha->fill.g, linha->fill.b);
+	glPopMatrix();
+
+	//Desenha o tiro
+	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
+		Tiro* t = *it;
+		glPushMatrix();
+		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
+		t->desenhar();
+		glPopMatrix();		
+	}
+
+	//Desenha o jogador
+	if (jogador != NULL) {
+		glPushMatrix();
+		glTranslatef(jogador->getCirculo().centro.x, jogador->getCirculo().centro.y, 0);
+		jogador->desenhar();
+		glPopMatrix();
+	}
+
+	//Desenha os círculos dos adversários
+	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
+		CarroInimigo* t = *it;
+		glPushMatrix();
+		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
+		t->desenhar();
+		glPopMatrix();		
+	}
+}
+
+void displayGame3D() {
+
+	//Desenha a pista externa
+	glPushMatrix();
+	glTranslatef(pistaExterna->centro.x, pistaExterna->centro.y, 0);
+	desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+	glPopMatrix();
+
+	//Desenha a pista interna
+	glPushMatrix();
+	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
+	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
+	DrawSphere(internal, 1);
+	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
 	glPopMatrix();
 
 	//Desenha a pista
@@ -155,15 +261,15 @@ void displayMap() {
     //Push to recover original PROJECTION MATRIX
     glPushMatrix();
         glLoadIdentity();
-        glOrtho (0, janelaLarg, 0, janelaAlt, -1, 1);
+        glOrtho (0, pistaExterna->raio * 2, 0, pistaExterna->raio * 2, -1, 1);
     	glPushAttrib(GL_ENABLE_BIT);
 		    glDisable(GL_LIGHTING);
 		    glDisable(GL_TEXTURE_2D);
 		    glMatrixMode(GL_MODELVIEW);
 		    glPushMatrix();
-		    	glTranslatef(janelaLarg - 200, 0, 0);
+		    	glTranslatef(janelaLarg - 100, 100 , 1);
 		    	glScalef(200/janelaLarg, 200/janelaAlt, 1);
-		    	displayGame();
+		    	displayGame2D();
 		    glPopMatrix();
 			glMatrixMode(GL_PROJECTION);
 		glPopAttrib();
@@ -173,30 +279,79 @@ void displayMap() {
 
 //Funcao que sera chamada toda vez que a janela for repintada.
 void display() {
+	static double angle = 0;
+	static int sign = 1;
+	angle += sign* 0.5;
+	if (angle > 90) { angle = 90; sign = -1; }
+	else if (angle < -90) { angle = -90; sign = 1; }
 	//Limpa a tela com a cor especificada
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//Ativa a visão do modelo
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	//changeCamera(camAngle, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
-
-	/*if (toggleCam == 0) {
-		//Câmera interna ao carro
-		double px = jogador->getPosicao().x + janelaLarg/2;
-		double py = jogador->getPosicao().y + janelaAlt/2;
-		double pz = jogador->getAltura();
-		gluLookAt(0, 0, 5, 
-			0, 0 ,0, 
-			0,0,1);
-	}*/
-
 	//Mostra o mapa na tela
 	glPushMatrix();
-	glTranslatef(0,0,-3);	
-	displayGame();
+	if (toggleCam == 0) {
+		//Câmera interna ao carro
+		double px = jogador->getPosicao().x;
+		double py = jogador->getPosicao().y;
+		double pz = 1.0;//jogador->getAltura();
+
+		double cx = px - 0.5 * sin(jogador->getAngCarro());
+		double cy = py + 0.5 * cos(jogador->getAngCarro());
+		lookAt(px, py, pz,
+			   cx, cy, 0,
+			   0, 0, 1);
+
+	}
+	else if (toggleCam == 1) {
+
+	}
+	else if (toggleCam == 2) {
+
+	}
+
+	glPushMatrix();
+	//glTranslatef(0,0,-1.0);
+	displayGame3D();
+	glPopMatrix();
+
+	//Desenha o plano
+	glPushMatrix();
+	glTranslatef(0,0,-1.0);
+    glRotatef(90, 1, 0, 0);
+    glTranslatef(0, 0, -pistaExterna->raio);
+	glScalef(pistaExterna->raio,pistaExterna->raio,1);
+	DisplayPlane(1);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0,0,-1.0);
+    glRotatef(90, 1, 0, 0);
+    glTranslatef(0, 0, pistaExterna->raio);
+	glScalef(pistaExterna->raio,pistaExterna->raio,1);
+	DisplayPlane(1);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0,0,-1.0);
+    glRotatef(90, 0, 1, 0);
+    glTranslatef(0, 0, pistaExterna->raio);
+	glScalef(pistaExterna->raio,pistaExterna->raio,1);
+	DisplayPlane(1);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0,0,-1.0);
+    glRotatef(90, 0, 1, 0);
+    glTranslatef(0, 0, -pistaExterna->raio);
+	glScalef(pistaExterna->raio,pistaExterna->raio,1);
+	DisplayPlane(1);
+	glPopMatrix();
+
 	glPopMatrix();
 
 	glPushMatrix();
@@ -220,14 +375,23 @@ void keyRelease(unsigned char key, int x, int y) {
 
 void keyPress(unsigned char key, int x, int y) {
 	keyState[key] = 1;
+
+	switch(key) {
+		case '0':
+			toggleCam = 0;
+			break;
+		case '1':
+			toggleCam = 1;
+			break;
+		case '2':
+			toggleCam = 2;
+			break;
+	}
+
 	if (!gameStart && (key == 'W' || key == 'w')) {
 		gameStart = true;
 		startTime = previousTime;
 	}
-}
-
-int outOfBounds(Ponto p) {
-	return p.x > pistaExterna->raio || p.x < -pistaExterna->raio || p.y > pistaExterna->raio || p.y < -pistaExterna->raio;
 }
 
 void gameRun(GLdouble currentTime, GLdouble timeDifference) {
@@ -263,7 +427,8 @@ void gameRun(GLdouble currentTime, GLdouble timeDifference) {
 	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
 		Tiro* t = *it;
 		t->updateTiro(timeDifference);
-		if (outOfBounds(t->getPosicao())) {
+		const double raio = pistaExterna->raio;
+		if (outOfBounds(t->getPosicao(), -raio, raio, -raio, raio)) {
 			it = tiros.erase(it);
 			delete t;
 		}
@@ -370,11 +535,24 @@ void mousePress(int button, int state, int x, int y) {
 	}
 }
 
+void changeCamera(int w, int h) {
+    glMatrixMode (GL_PROJECTION);
+
+    glLoadIdentity ();
+
+    //gluPerspective (angle, 
+    //       (GLfloat) w / (GLfloat) h, 1.0, 5.0);
+    glFrustum(-w/2, w/2, -h/2, h/2, nearZ, farZ);
+
+    glMatrixMode (GL_MODELVIEW);
+}
+
 void reshape (int w, int h) {
 
     glViewport (0, 0, (GLsizei)w, (GLsizei)h);
-
-    changeCamera(camAngle, w, h);
+    janelaLarg = w;
+    janelaAlt = h;
+    changeCamera(w, h);
 }
 
 void init() {
@@ -386,6 +564,8 @@ void init() {
     //glEnable(GL_LIGHTING);
     glShadeModel (GL_SMOOTH);
     glDepthFunc(GL_LEQUAL);
+
+    internal = CreateSphere(pistaInterna->raio, 16);
 
 }
 

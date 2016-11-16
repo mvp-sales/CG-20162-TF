@@ -11,6 +11,30 @@
 
 const double DEG2RAD = M_PI/180;
 
+typedef struct
+{
+    //Vertex coordinate
+    double X;
+    double Y;
+    double Z;
+    
+    //Vertex normal 
+    double nX;
+    double nY;
+    double nZ;
+    
+    //Vertex texture coordinate
+    double U;
+    double V;
+} VERTICES;
+
+typedef struct
+{
+    VERTICES * vtx;
+    int numVtx;
+    double radius;
+} OBJ;
+
 struct ponto {
 	double x;
 	double y;
@@ -55,5 +79,10 @@ bool dentroCirc(Circulo externo, Circulo interno);
 bool colisaoCirc(Circulo c1, Circulo c2);
 void desenhaRetangulo(double largura, double altura, double r, double g, double b);
 void desenhaCirculo(double raio, double r, double g, double b);
+int outOfBounds(Ponto p, double bBoxLeft, double bBoxRight, double bBoxBottom, double bBoxTop);
+void DrawSphere (OBJ* objEarth, GLuint texture);
+OBJ * CreateSphere (double R, double space) ;
+void DisplayPlane (GLuint texture);
+
 
 #endif
