@@ -35,35 +35,27 @@ typedef struct
     double radius;
 } OBJ;
 
-struct ponto {
+typedef struct ponto {
 	double x;
 	double y;
-};
+} Ponto;
 
-typedef struct ponto Ponto;
-
-struct cor {
+typedef struct cor {
 	double r;
 	double g;
 	double b;
-};
+} Cor;
 
-typedef struct cor Cor;
-
-struct circulo {
+typedef struct circulo {
 	Ponto centro;
 	double raio;
 	Cor fill;
-};
+} Circulo;
 
-typedef struct circulo Circulo;
-
-struct grupoCirculo {
+typedef struct grupoCirculo {
 	Circulo atual;
 	struct grupoCirculo* prox;
-};
-
-typedef struct grupoCirculo GrupoCirculo;
+} GrupoCirculo;
 
 struct retangulo {
 	Ponto vEsqSup;
@@ -74,15 +66,21 @@ struct retangulo {
 
 typedef struct retangulo Retangulo;
 
+//Funções adicionais
 double distPonto(Ponto p1, Ponto p2);
+int outOfBounds(Ponto p, double bBoxLeft, double bBoxRight, double bBoxBottom, double bBoxTop);
 bool dentroCirc(Circulo externo, Circulo interno);
 bool colisaoCirc(Circulo c1, Circulo c2);
+
+//Funções 2D
 void desenhaRetangulo(double largura, double altura, double r, double g, double b);
 void desenhaCirculo(double raio, double r, double g, double b);
-int outOfBounds(Ponto p, double bBoxLeft, double bBoxRight, double bBoxBottom, double bBoxTop);
+void desenhaCirculoLinha(double raio, double r, double g, double b);
+
+//Funções 3D
 void DrawSphere (OBJ* objEarth, GLuint texture);
 OBJ * CreateSphere (double R, double space) ;
 void DisplayPlane (GLuint texture);
-
+void DrawCylinder(double radius, double length);
 
 #endif

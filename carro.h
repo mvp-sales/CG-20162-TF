@@ -7,6 +7,7 @@
 #define LIMITE_ANGULO 45
 #define BASE_WIDTH 0.35
 #define BASE_HEIGHT 0.65
+#define BASE_LENGTH 0.25
 #define ACOPL_PROPORTION 0.6
 #define ACOPL_WIDTH 0.08
 #define ACOPL_HEIGHT 0.1
@@ -66,7 +67,8 @@ class Carro {
 		double corRodas[3];
 		double corCanhao[3];
 
-		void desenhaAcopl(double width, double height, double proportion, int top, double angulo);
+		void desenhaAcopl2D(double width, double height, double proportion, int top, double angulo);
+		void desenhaAcopl3D(double width, double height, double proportion, int top, double angulo);
 
 	public:
 		Carro() {
@@ -100,7 +102,8 @@ class Carro {
 		void virarCarro(double taxa, GLdouble timeDiff);
 		void moverRanhuras(int direction, GLdouble timeDiff);
 		Tiro* atirar();
-		void desenhar();
+		void desenhar2D();
+		void desenhar3D();
 };
 
 class CarroJogador : public Carro {

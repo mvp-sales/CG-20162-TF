@@ -20,7 +20,7 @@ all: ${OUTPUT}
 # Source files
 #****************************************************************************
 
-SRCS := tinyxml.cpp tinyxmlparser.cpp figuras.cpp carro.cpp leitor.cpp trabalhocg.cpp tinyxmlerror.cpp tinystr.cpp
+SRCS := tinyxml.cpp tinyxmlparser.cpp figuras.cpp camera.cpp carro.cpp leitor.cpp trabalhocg.cpp tinyxmlerror.cpp tinystr.cpp
 
 # Add on the sources for libraries
 SRCS := ${SRCS}
@@ -49,6 +49,7 @@ clean:
 	-rm -f core ${OBJS} ${OUTPUT}
 
 
+camera.o: camera.h
 figuras.o: figuras.h
 carro.o: figuras.h carro.h
 tinyxml.o: tinyxml.h tinystr.h

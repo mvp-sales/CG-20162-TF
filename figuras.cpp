@@ -147,6 +147,25 @@ void DrawSphere (OBJ* objEarth, GLuint texture)
     glEnd();
 }
 
+//Cilindro (incluir normais)
+void DrawCylinder(double radius, double length) {
+    int slices = 72;
+    double fraction = 360 / slices;
+    for(int i=0; i<slices; i++) {
+        float theta = ((float)i) * fraction * DEG2RAD;
+        float nextTheta = ((float)i+1) * fraction * DEG2RAD;
+        glBegin(GL_TRIANGLE_STRIP);
+        /*vertex at middle of end */ glVertex3f(0.0, length, 0.0);
+        /*vertices at edges of circle*/ glVertex3f(radius*cos(theta), length, radius*sin(theta));
+                                                  glVertex3f (radius*cos(nextTheta), length, radius*sin(nextTheta));
+        /* the same vertices at the bottom of the cylinder*/
+        glVertex3f (radius*cos(nextTheta), 0.0, radius*sin(nextTheta));
+        glVertex3f(radius*cos(theta), 0.0, radius*sin(theta));
+        glVertex3f(0.0, 0.0, 0.0);
+        glEnd();
+    }
+}
+
 //Distância entre pontos
 double distPonto(Ponto p1, Ponto p2) {
 	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
@@ -184,4 +203,14 @@ void desenhaCirculo(double raio, double r, double g, double b) {
 		glVertex2f(cos(i*DEG2RAD)*raio, sin(i*DEG2RAD)*raio);
 	}
 	glEnd();
+}
+
+void desenhaCirculoLinha(double raio, double r, double g, double b) {
+    glColor3f(r,g,b);
+    glBegin(GL_LINES);
+    int i = 0;
+    for (i = 0; i <= 360; i++) {
+        glVertex2f(cos(i*DEG2RAD)*raio, sin(i*DEG2RAD)*raio);
+    }
+    glEnd();
 }

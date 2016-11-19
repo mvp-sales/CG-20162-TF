@@ -135,7 +135,7 @@ Tiro* Carro::atirar() {
 
 }
 
-void Carro::desenhaAcopl(double width, double height, double proportion, int top, double angulo) {
+void Carro::desenhaAcopl2D(double width, double height, double proportion, int top, double angulo) {
 	if (!top)
 		top = -1;
 	else
@@ -163,7 +163,42 @@ void Carro::desenhaAcopl(double width, double height, double proportion, int top
 	glPopMatrix();
 }
 
-void Carro::desenhar() {
+void Carro::desenhaAcopl3D(double width, double height, double proportion, int top, double angulo) {
+	if (!top)
+		top = -1;
+	else
+		top = 1;
+
+	double radius = ACOPL_WIDTH / 2.0;
+	double length = ACOPL_HEIGHT;
+
+	glPushMatrix();
+	glTranslatef(width * -sin(angulo * DEG2RAD)/2, top*height*proportion/2, radius);
+	glRotatef(angulo, 0, 0, 1);
+
+	glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+	DrawCylinder(radius, length);
+	//desenhaRetangulo(ACOPL_WIDTH, ACOPL_HEIGHT, corRodas[0], corRodas[1], corRodas[2]);
+	glTranslatef(-RODA_WIDTH / 2.0, length, 0);
+	if (top == 1)
+		glRotatef(_angRodas, 0, 0, 1);
+	DrawCylinder(RODA_WIDTH / 2.0, RODA_HEIGHT);
+	//desenhaRetangulo(RODA_WIDTH, RODA_HEIGHT, corRodas[0], corRodas[1], corRodas[2]);
+
+	int direction = angulo/abs(angulo);
+
+	//Desenha as ranhuras
+	//glColor3f(0.0,0.0,0.0);
+	//glBegin(GL_LINES);
+	//	glVertex2f(direction * _posRanhuras * RODA_WIDTH, 0);
+	//	glVertex2f(direction * _posRanhuras * RODA_WIDTH, RODA_HEIGHT);
+	//	glVertex2f(direction * (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, 0);
+	//	glVertex2f(direction* (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, RODA_HEIGHT);
+	//glEnd();
+	glPopMatrix();
+}
+
+void Carro::desenhar2D() {
 	//O carro assume que o raio base é de 1
 	glPushMatrix();
 		//Escala ao círculo
@@ -179,16 +214,16 @@ void Carro::desenhar() {
 		//Desenha os acoplamentos e as rodas
 
 		//Canto inferior esquerdo
-		desenhaAcopl(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
 
 		//Canto superior esquerdo
-		desenhaAcopl(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
 
 		//Canto superior direito
-		desenhaAcopl(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
 
 		//Canto inferior direito
-		desenhaAcopl(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
 
 		//Desenha o canhão
 		glPushMatrix();
@@ -200,7 +235,44 @@ void Carro::desenhar() {
 	glPopMatrix();
 }
 
+void Carro::desenhar3D() {
+	//O carro assume que o raio base é de 1
+	glPushMatrix();
+		//Escala ao círculo
+		glScalef(_circ->raio*2, _circ->raio*2, _circ->raio*2);
+		//Rotaciona o carro
+		glRotatef(_angCarro, 0, 0, 1);
+		//Desenha a base
+		glPushMatrix();
+			//glTranslatef(0, 0, 0.5);
+			glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);	
+			glColor3f(corChassis[0], corChassis[1], corChassis[2]);
+			glutSolidCube(1);
+		glPopMatrix();
 
+		//Desenha os acoplamentos e as rodas
+
+		//Canto inferior esquerdo
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
+
+		//Canto superior esquerdo
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
+
+		//Canto superior direito
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
+
+		//Canto inferior direito
+		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
+
+		//Desenha o canhão
+		glPushMatrix();
+			glTranslatef(0, BASE_HEIGHT/2, 0);
+			glRotatef(_angCanhao, 0, 0, 1);
+			desenhaRetangulo(CANHAO_WIDTH, CANHAO_HEIGHT, corCanhao[0], corCanhao[1], corCanhao[2]);
+		glPopMatrix();
+
+	glPopMatrix();
+}
 
 
 
