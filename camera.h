@@ -6,10 +6,6 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 
-void makeIdentityf(GLfloat m[4][4]);
-void normalize(GLdouble o[3]);
-void crossProduct(GLdouble u[3], GLdouble v[3], GLdouble o[3]);
-
 class Camera {
 	private:
 		int cameraVision;

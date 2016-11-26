@@ -39,7 +39,7 @@ double timerHour = 0;
 GLdouble previousTime = 0;
 GLdouble startTime = 0;
 
-void printTimer(GLfloat x, GLfloat y)
+void printText2D(GLfloat x, GLfloat y, char* text)
 {
     //Create a string to be printed
     //Draw text considering a 2D space (disable all 3d features)
@@ -49,42 +49,21 @@ void printTimer(GLfloat x, GLfloat y)
         glLoadIdentity ();
         glOrtho (0, 1, 0, 1, -1, 1);
     	glPushAttrib(GL_ENABLE_BIT);
-		    glDisable(GL_LIGHTING);
-		    glDisable(GL_TEXTURE_2D);
-		    char *tmpStr;
-		    sprintf(str, "Tempo: %02d:%02d:%02d", (int) timerHour, (int) timerMin, (int) timerSeg);
-		    //Define the position to start printing
-		    glRasterPos2f(x, y);
-		    //Print  the first Char with a certain font
-		    tmpStr = str;
-		    //Print each of the other Char at time
-		    while( *tmpStr ){
-		        glutBitmapCharacter(font, *tmpStr);
-		        tmpStr++;
-		    }
+	    glDisable(GL_LIGHTING);
+	    glDisable(GL_TEXTURE_2D);
+	    char *tmpStr;
+	    //Define the position to start printing
+	    glRasterPos2f(x, y);
+	    //Print  the first Char with a certain font
+	    tmpStr = text;
+	    //Print each of the other Char at time
+	    while( *tmpStr ){
+	        glutBitmapCharacter(font, *tmpStr);
+	        tmpStr++;
+	    }
     	glPopAttrib();
     glPopMatrix();
     glMatrixMode (GL_MODELVIEW);
-}
-
-void printEnd(GLfloat x, GLfloat y)
-{
-    //Create a string to be printed
-    char *tmpStr;
-    if (gameWon)
-    	sprintf(str, "Voce ganhou.");
-    else
-    	sprintf(str, "Voce perdeu.");
-    //Define the position to start printing
-    glRasterPos2f(x, y);
-    //Print  the first Char with a certain font
-    tmpStr = str;
-    //Print each of the other Char at time
-    while( *tmpStr ){
-        glutBitmapCharacter(font, *tmpStr);
-        tmpStr++;
-    }
-
 }
 
 void displayGame2D() {
@@ -211,11 +190,6 @@ void displayMap() {
 
 //Funcao que sera chamada toda vez que a janela for repintada.
 void display() {
-	static double angle = 0;
-	static int sign = 1;
-	angle += sign* 0.5;
-	if (angle > 90) { angle = 90; sign = -1; }
-	else if (angle < -90) { angle = -90; sign = 1; }
 	//Limpa a tela com a cor especificada
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -224,39 +198,23 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	double dx = 0, dy = 0;
-	double ex = 0, ey = 0;
-
-	//Mostra o mapa na tela
 	glPushMatrix();
 	if (camera->getCurrentCamera() == 1) {
-		//Câmera no cockpit do carro
+		//Câmera no cockpit (ajustar)
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
-		double pz = jogador->getAltura() / 2;
 
-		px = px - jogador->getCirculo().raio * sin(jogador->getAngCarro() * DEG2RAD);
-		py = py + jogador->getCirculo().raio * cos(jogador->getAngCarro() * DEG2RAD);
+		double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+		double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+		double ez = jogador->getAltura() * 40;
 
-		double cx = px - 1 * sin(jogador->getAngCarro() * DEG2RAD);
-		double cy = py + 1 * cos(jogador->getAngCarro() * DEG2RAD);
-		camera->lookAt(px, py, pz,
-			   cx, cy, pz,
+		camera->lookAt(ex, ey, ez,
+			   px, py, 0,
 			   0, 0, 1);
-		/*glPushMatrix();
-		glTranslatef(0.0,0,-1.0);
-		glBegin(GL_LINES);
-		glVertex3f(px, py, 0);
-		glVertex3f(cx, cy, 0);
-		glEnd();
-		glPopMatrix();*/
-		//lookAt(px, py, pz,
-		//	   cx, cy, pz,
-		//	   0, 1, 1);
 
 	}
 	else if (camera->getCurrentCamera() == 2) {
-		//Câmera do canhão
+		//Câmera do canhão (ajustar)
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
 		double pz = 1.0;//jogador->getAltura();
@@ -269,82 +227,61 @@ void display() {
 
 
 	}
-	else if (camera->getCurrentCamera() == 3) {
+	else if (camera->getCurrentCamera() == 3) {		
 		//Câmera atrás do carro, seguindo sua posição
-		double px = jogador->getPosicao().x + (jogador->getCirculo().raio + 100) * sin(jogador->getAngCarro() * DEG2RAD);
-		double py = jogador->getPosicao().y - (jogador->getCirculo().raio + 100) * cos(jogador->getAngCarro() * DEG2RAD);
-		double pz = jogador->getAltura() + 1;//jogador->getAltura();
+		double px = jogador->getPosicao().x;
+		double py = jogador->getPosicao().y;
+		double pz = jogador->getAltura();
 
-		px = px;
-		py = py;
+		double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+		double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+		double ez = pz * 40;
 
-		double cx = jogador->getPosicao().x; //- 0.5 * sin(jogador->getAngCarro());
-		double cy = jogador->getPosicao().y; //+ 0.5 * cos(jogador->getAngCarro());
-		double cz = jogador->getAltura() / 2;
-		ex = px;
-		ey = py;
-		dx = cx;
-		dy = cy;
-		
-
-		camera->lookAt(jogador->getPosicao().x, jogador->getPosicao().y, 0,
-			   jogador->getPosicao().x, jogador->getPosicao().y, 0,
+		camera->lookAt(ex, ey, ez,
+			   px, py, pz,
 			   0, 0, 1);
 	}
-
-	static double dist = 0;
-	//dist += 1;
 
 	glPushMatrix();
 	displayGame3D();
 	glPopMatrix();
 
-	
-	glPushMatrix();
-	glColor3f(1.0, 1.0, 1.0);
-	glBegin(GL_LINES);
-	glVertex3f(ex, ey, 0);
-	glVertex3f(dx, dy, 0);
-	glEnd();
-	glPopMatrix();
-	
-
-
 	//Desenha o plano
-	glPushMatrix();
+	/*glPushMatrix();
 	glTranslatef(0,0,-1.0);
-    glRotatef(90, 1, 0, 0);
-    glTranslatef(0, 0, -pistaExterna->raio);
+    	glRotatef(90, 1, 0, 0);
+    	glTranslatef(0, 0, -pistaExterna->raio);
 	glScalef(pistaExterna->raio,pistaExterna->raio,1);
 	DisplayPlane(1);
 	glPopMatrix();
 
 	glPushMatrix();
 	glTranslatef(0,0,-1.0);
-    glRotatef(90, 1, 0, 0);
-    glTranslatef(0, 0, pistaExterna->raio);
+    	glRotatef(90, 1, 0, 0);
+    	glTranslatef(0, 0, pistaExterna->raio);
 	glScalef(pistaExterna->raio,pistaExterna->raio,1);
 	DisplayPlane(1);
 	glPopMatrix();
 
 	glPushMatrix();
 	glTranslatef(0,0,-1.0);
-    glRotatef(90, 0, 1, 0);
-    glTranslatef(0, 0, pistaExterna->raio);
+    	glRotatef(90, 0, 1, 0);
+    	glTranslatef(0, 0, pistaExterna->raio);
 	glScalef(pistaExterna->raio,pistaExterna->raio,1);
 	DisplayPlane(1);
 	glPopMatrix();
 
 	glPushMatrix();
 	glTranslatef(0,0,-1.0);
-    glRotatef(90, 0, 1, 0);
-    glTranslatef(0, 0, -pistaExterna->raio);
+    	glRotatef(90, 0, 1, 0);
+    	glTranslatef(0, 0, -pistaExterna->raio);
 	glScalef(pistaExterna->raio,pistaExterna->raio,1);
 	DisplayPlane(1);
-	glPopMatrix();
+	glPopMatrix();*/
 
 	glPopMatrix();
 
+	//Mostra o mapa na tela
 	if (mapActive) {
 		glPushMatrix();
 		displayMap();
@@ -353,10 +290,17 @@ void display() {
 
 	//Desenha o tempo na tela
 	glColor3f(1.0, 1.0, 1.0);
-	printTimer((janelaLarg - 150.0) / janelaLarg, (janelaAlt - 15.0) / janelaAlt);
+	char text[300];
+	sprintf(text, "Tempo: %0d:%0d:%0d", (int) timerHour, (int) timerMin, (int) timerSeg);
+	printText2D(0.85, 0.99, text);
 
-	if (gameOver)
-		printEnd(janelaLarg / 2 - 45.0, janelaAlt / 2);
+	if (gameOver) {
+		if (gameWon)
+		  sprintf(text, "Voce venceu");
+		else
+		  sprintf(text, "Voce perdeu");
+		printText2D(0.44, 0.5, text);	
+	}
 
     //Desenha na tela
     glutSwapBuffers();
@@ -540,10 +484,9 @@ void reshape (int w, int h) {
 
 
 void init() {
-	glClearColor(1.0, 1.0, 1.0, 0);
-
-	//Modelo 3D
-	glEnable(GL_DEPTH_TEST);
+    glClearColor(1.0, 1.0, 1.0, 0);
+    //Modelo 3D
+    glEnable(GL_DEPTH_TEST);
     //glEnable( GL_TEXTURE_2D );
     //glEnable(GL_LIGHTING);
     glShadeModel (GL_SMOOTH);
