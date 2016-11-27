@@ -21,12 +21,24 @@ void Carro::setAngRodas(double ang) {
 }
 
 //Getters
-double Carro::getAngCanhao() {
-	return _angCanhao;
+double Carro::getAngCanhaoH() {
+	return _angCanhaoH;
+}
+
+double Carro::getAngCanhaoV() {
+	return _angCanhaoV;
 }
 
 double Carro::getAngCarro() {
 	return _angCarro;
+}
+
+double Carro::getAngRodas() {
+	return _angRodas;
+}
+
+double Carro::getAngRodasGiro() {
+	return _angRodasGiro;
 }
 
 Circulo Carro::getCirculo() {
@@ -68,13 +80,14 @@ void Carro::virarRoda(double ang) {
 		_angRodas = LIMITE_ANGULO;
 	}
 }
+
 void Carro::virarCanhao(double ang) {
-	_angCanhao += ang;
-	if (_angCanhao < -LIMITE_ANGULO) {
-		_angCanhao = -LIMITE_ANGULO;
+	_angCanhaoH += ang;
+	if (_angCanhaoH < -LIMITE_ANGULO) {
+		_angCanhaoH = -LIMITE_ANGULO;
 	}
-	else if (_angCanhao > LIMITE_ANGULO) {
-		_angCanhao = LIMITE_ANGULO;
+	else if (_angCanhaoH > LIMITE_ANGULO) {
+		_angCanhaoH = LIMITE_ANGULO;
 	}
 }
 
@@ -85,19 +98,28 @@ void Carro::virarCarro(double taxa, GLdouble timeDiff) {
 	else if (_angCarro > 360) _angCarro = _angCarro - 360;
 }
 
+void Carro::girarRodas(int direction, GLdouble timeDiff) {
+	_angRodasGiro += (1 / DEG2RAD) * direction * timeDiff * this->getVelCarro() / (this->getCirculo().raio * RODA_WIDTH);
+	if (_angRodasGiro < 0)	_angRodasGiro = _angRodasGiro + 360;
+	else if (_angRodasGiro > 360)	_angRodasGiro = _angRodasGiro - 360;
+}
+
+
 void Carro::moverRanhuras(int direction, GLdouble timeDiff) {
 	_posRanhuras += direction * timeDiff * this->getVelCarro()/(2 * M_PI * RODA_WIDTH * this->getCirculo().raio);
 	if (_posRanhuras > DIST_RANHURAS)
 		_posRanhuras = 0;
 	else if ((_posRanhuras - DIST_RANHURAS) < -DIST_RANHURAS)
-		_posRanhuras = DIST_RANHURAS;	
+		_posRanhuras = DIST_RANHURAS;
 }
 
 Tiro* Carro::atirar() {
 	//Determina a posição do canhão
+	const double anguloCarro = this->getAngCarro();
+	const double anguloCanhao = this->getAngCanhaoH();
 	const double transfMatrixCarro[][3] = {
-											{cos(_angCarro * DEG2RAD), -sin(_angCarro * DEG2RAD), _circ->centro.x}, 
-											{sin(_angCarro * DEG2RAD), cos(_angCarro * DEG2RAD), _circ->centro.y}, 
+											{cos(anguloCarro * DEG2RAD), -sin(anguloCarro * DEG2RAD), _circ->centro.x},
+											{sin(anguloCarro * DEG2RAD), cos(anguloCarro * DEG2RAD), _circ->centro.y},
 											{0.0, 0.0, 1.0}
 										};
 	const double origemCanhaoRelacaoCarro[3] = {0.0, BASE_HEIGHT * _circ->raio, 1.0};
@@ -108,14 +130,14 @@ Tiro* Carro::atirar() {
 		for (j = 0; j < 3; j++) {
 			origemCanhaoGlobal[i] += transfMatrixCarro[i][j]*origemCanhaoRelacaoCarro[j];
 		}
-	} 
+	}
 
 
 	//Determina a posição da saída do canhão
-	double angTotal = _angCarro + _angCanhao;
+	double angTotal = anguloCarro + anguloCanhao;
 	const double transfMatrix[][3] = {
-										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]}, 
-										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]}, 
+										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]},
+										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]},
 										{0.0, 0.0, 1.0}
 									};
 	const double saidaCanhaoRelacaoCanhao[3] = {0.0, CANHAO_HEIGHT * 2 * _circ->raio, 1.0};
@@ -169,32 +191,24 @@ void Carro::desenhaAcopl3D(double width, double height, double proportion, int t
 	else
 		top = 1;
 
-	double radius = ACOPL_WIDTH / 2.0;
-	double length = ACOPL_HEIGHT;
+	double acoplRadius = ACOPL_WIDTH / 2.0;
+	double acoplLength = ACOPL_HEIGHT;
+	double wheelRadius = RODA_WIDTH / 2.0;
+	double wheelLength = RODA_HEIGHT;
 
 	glPushMatrix();
-	glTranslatef(width * -sin(angulo * DEG2RAD)/2, top*height*proportion/2, radius);
+	//Desenha o acoplamento
+	glTranslatef(width * -sin(angulo * DEG2RAD)/2, top*height*proportion/2, 0);
 	glRotatef(angulo, 0, 0, 1);
-
 	glColor3f(corRodas[0], corRodas[1], corRodas[2]);
-	DrawCylinder(radius, length);
-	//desenhaRetangulo(ACOPL_WIDTH, ACOPL_HEIGHT, corRodas[0], corRodas[1], corRodas[2]);
-	glTranslatef(-RODA_WIDTH / 2.0, length, 0);
+	DrawCylinder(acoplRadius, acoplLength);
+
+	//Desenha a roda
+	glTranslatef(0, acoplLength, 0);
 	if (top == 1)
-		glRotatef(_angRodas, 0, 0, 1);
-	DrawCylinder(RODA_WIDTH / 2.0, RODA_HEIGHT);
-	//desenhaRetangulo(RODA_WIDTH, RODA_HEIGHT, corRodas[0], corRodas[1], corRodas[2]);
-
-	int direction = angulo/abs(angulo);
-
-	//Desenha as ranhuras
-	//glColor3f(0.0,0.0,0.0);
-	//glBegin(GL_LINES);
-	//	glVertex2f(direction * _posRanhuras * RODA_WIDTH, 0);
-	//	glVertex2f(direction * _posRanhuras * RODA_WIDTH, RODA_HEIGHT);
-	//	glVertex2f(direction * (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, 0);
-	//	glVertex2f(direction* (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, RODA_HEIGHT);
-	//glEnd();
+		glRotatef(this->getAngRodas(), 0, 0, 1);
+	glRotatef(this->getAngRodasGiro(), 0, 1, 0);
+	DrawCylinder(wheelRadius, wheelLength);
 	glPopMatrix();
 }
 
@@ -228,7 +242,7 @@ void Carro::desenhar2D() {
 		//Desenha o canhão
 		glPushMatrix();
 			glTranslatef(0, BASE_HEIGHT/2, 0);
-			glRotatef(_angCanhao, 0, 0, 1);
+			glRotatef(this->getAngCanhaoH(), 0, 0, 1);
 			desenhaRetangulo(CANHAO_WIDTH, CANHAO_HEIGHT, corCanhao[0], corCanhao[1], corCanhao[2]);
 		glPopMatrix();
 
@@ -242,10 +256,12 @@ void Carro::desenhar3D() {
 		glScalef(_circ->raio*2, _circ->raio*2, _circ->raio*2);
 		//Rotaciona o carro
 		glRotatef(_angCarro, 0, 0, 1);
+		//Sobe o carro
+		glTranslatef(0, 0, RODA_WIDTH / 2.0);
 		//Desenha a base
 		glPushMatrix();
-			//glTranslatef(0, 0, 0.5);
-			glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);	
+			glTranslatef(0, 0, BASE_LENGTH / 2.0);
+			glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);
 			glColor3f(corChassis[0], corChassis[1], corChassis[2]);
 			glutSolidCube(1);
 		glPopMatrix();
@@ -253,22 +269,26 @@ void Carro::desenhar3D() {
 		//Desenha os acoplamentos e as rodas
 
 		//Canto inferior esquerdo
-		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
+		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
 
 		//Canto superior esquerdo
-		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
+		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
 
 		//Canto superior direito
-		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
+		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
 
 		//Canto inferior direito
-		desenhaAcopl2D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
+		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
 
 		//Desenha o canhão
 		glPushMatrix();
-			glTranslatef(0, BASE_HEIGHT/2, 0);
-			glRotatef(_angCanhao, 0, 0, 1);
-			desenhaRetangulo(CANHAO_WIDTH, CANHAO_HEIGHT, corCanhao[0], corCanhao[1], corCanhao[2]);
+			glTranslatef(0, BASE_HEIGHT/2, BASE_LENGTH / 2);
+			//Rotação horizontal
+			glRotatef(this->getAngCanhaoH(), 0, 0, 1);
+			//Rotação vertical
+			//glRotatef(this->getAngCanhaoV(), 1, 0, 0);
+			glColor3f(corCanhao[0], corCanhao[1], corCanhao[2]);
+			DrawCylinder(CANHAO_WIDTH / 2.0, CANHAO_HEIGHT);
 		glPopMatrix();
 
 	glPopMatrix();
@@ -291,6 +311,9 @@ void CarroJogador::andar(int direction, GLdouble timeDiff) {
 	//Ajusta o posicionamento das ranhuras
 	this->moverRanhuras(direction, timeDiff);
 
+	//Gira a roda
+	this->girarRodas(direction, timeDiff);
+
 	//Anda com o carro
 	double angulo = _angCarro;
 	_circ->centro.y += direction * timeDiff * _velCarro * cos(angulo*DEG2RAD);
@@ -311,7 +334,7 @@ void CarroInimigo::atirar(std::list<Tiro*>& listTiros, GLdouble timeDiff) {
 		listTiros.push_back(t);
 		_fireTime -= timeRate;
 	}
-	
+
 }
 
 void CarroInimigo::alinharAngulo() {
@@ -348,8 +371,11 @@ Ponto CarroInimigo::andar(GLdouble timeDiff) {
 	//Ajusta o posicionamento das ranhuras
 	this->moverRanhuras(this->getDirecaoMovimento(), timeDiff);
 
+	//Gira a roda
+	this->girarRodas(this->getDirecaoMovimento(), timeDiff);
+
 	_circ->centro.y += this->getDirecaoMovimento() * cos(_angCarro*DEG2RAD) * timeDiff * this->getVelCarro();
-	_circ->centro.x += this->getDirecaoMovimento() * -sin(_angCarro*DEG2RAD) * timeDiff * this->getVelCarro(); 
+	_circ->centro.x += this->getDirecaoMovimento() * -sin(_angCarro*DEG2RAD) * timeDiff * this->getVelCarro();
 	return this->getPosicao();
 }
 
@@ -384,7 +410,7 @@ void Tiro::setPlayerShot(bool playerShot) {
 	else {
 		_circ->fill.r = 1.0;
 		_circ->fill.g = 1.0;
-		_circ->fill.b = 0.0;				
+		_circ->fill.b = 0.0;
 	}
 }
 

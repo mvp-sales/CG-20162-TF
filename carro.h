@@ -59,8 +59,10 @@ class Carro {
 		double _velTiro;
 		double _velCarro;
 		double _angCarro;
-		double _angCanhao;
+		double _angCanhaoH;
+		double _angCanhaoV;
 		double _angRodas;
+		double _angRodasGiro;
 		double _posRanhuras;
 		bool _isPlayer;
 		double corChassis[3];
@@ -74,8 +76,10 @@ class Carro {
 		Carro() {
 			_circ = (Circulo*) malloc(sizeof(Circulo));
 			_angCarro = 0;
-			_angCanhao = 0;
+			_angCanhaoH = 0;
+			_angCanhaoV = 0;
 			_angRodas = 0;
+			_angRodasGiro = 0;
 			_posRanhuras = DIST_RANHURAS/2;
 		};
 		~Carro() {
@@ -85,7 +89,10 @@ class Carro {
 			return _isPlayer;
 		};
 		double getAngCarro();
-		double getAngCanhao();
+		double getAngCanhaoH();
+		double getAngCanhaoV();
+		double getAngRodas();
+		double getAngRodasGiro();
 		Circulo getCirculo();
 		Ponto getPosicao();
 		double getVelCarro();
@@ -96,7 +103,8 @@ class Carro {
 		void setPosicao(Ponto pos);
 		void setRaio(double raio);
 		void setVelTiro(double vtiro);
-		void setVelCarro(double vcarro);		
+		void setVelCarro(double vcarro);
+		void girarRodas(int direction, GLdouble timeDiff);
 		void virarRoda(double ang);
 		void virarCanhao(double ang);
 		void virarCarro(double taxa, GLdouble timeDiff);
@@ -109,14 +117,14 @@ class Carro {
 class CarroJogador : public Carro {
 	public:
 		CarroJogador() : Carro() {
-			corChassis[0] = 0.2; 
-			corChassis[1] = 0.9; 
+			corChassis[0] = 0.2;
+			corChassis[1] = 0.9;
 			corChassis[2] = 0.4;
-			corRodas[0] = 0.2; 
+			corRodas[0] = 0.2;
 			corRodas[1] = 0.6;
 			corRodas[2] =  0.7;
 			corCanhao[0] = 0.1;
-			corCanhao[1] = 0.7; 
+			corCanhao[1] = 0.7;
 			corCanhao[2] = 0.1;
 			_isPlayer = true;
 		}
@@ -133,14 +141,14 @@ class CarroInimigo : public Carro {
 		double _reverseTime;
 	public:
 		CarroInimigo() : Carro() {
-			corChassis[0] = 0.9; 
-			corChassis[1] = 0.2; 
+			corChassis[0] = 0.9;
+			corChassis[1] = 0.2;
 			corChassis[2] = 0.2;
-			corRodas[0] = 0.7; 
+			corRodas[0] = 0.7;
 			corRodas[1] = 0.4;
 			corRodas[2] =  0.2;
 			corCanhao[0] = 0.7;
-			corCanhao[1] = 0.1; 
+			corCanhao[1] = 0.1;
 			corCanhao[2] = 0.1;
 			_fireTime = 0;
 			_isPlayer = false;
@@ -179,5 +187,3 @@ class CarroInimigo : public Carro {
 };
 
 #endif
-
-

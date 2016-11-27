@@ -9,7 +9,7 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(1, 0.999, 100);
+Camera* camera = new Camera(1, 60, 1, 350);
 
 //Dimensões da janela
 double janelaLarg;
@@ -39,31 +39,33 @@ double timerHour = 0;
 GLdouble previousTime = 0;
 GLdouble startTime = 0;
 
-void printText2D(GLfloat x, GLfloat y, char* text)
+void printText2D(GLfloat x, GLfloat y, char* text, GLdouble r, GLdouble g, GLdouble b)
 {
-    //Create a string to be printed
-    //Draw text considering a 2D space (disable all 3d features)
-    glMatrixMode (GL_PROJECTION);
-    //Push to recover original PROJECTION MATRIX
-    glPushMatrix();
-        glLoadIdentity ();
-        glOrtho (0, 1, 0, 1, -1, 1);
-    	glPushAttrib(GL_ENABLE_BIT);
-	    glDisable(GL_LIGHTING);
-	    glDisable(GL_TEXTURE_2D);
-	    char *tmpStr;
-	    //Define the position to start printing
-	    glRasterPos2f(x, y);
-	    //Print  the first Char with a certain font
-	    tmpStr = text;
-	    //Print each of the other Char at time
-	    while( *tmpStr ){
-	        glutBitmapCharacter(font, *tmpStr);
-	        tmpStr++;
-	    }
-    	glPopAttrib();
-    glPopMatrix();
-    glMatrixMode (GL_MODELVIEW);
+  //Create a string to be printed
+  //Draw text considering a 2D space (disable all 3d features)
+  glMatrixMode (GL_PROJECTION);
+  //Push to recover original PROJECTION MATRIX
+  glPushMatrix();
+  glLoadIdentity ();
+  glOrtho (0, 1, 0, 1, -1, 1);
+  glPushAttrib(GL_ENABLE_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    char *tmpStr;
+    //Adjust the color
+    glColor3f(r, g, b);
+    //Define the position to start printing
+    glRasterPos2f(x, y);
+    //Print  the first Char with a certain font
+    tmpStr = text;
+    //Print each of the other Char at time
+    while( *tmpStr ){
+      glutBitmapCharacter(font, *tmpStr);
+      tmpStr++;
+    }
+  glPopAttrib();
+  glPopMatrix();
+  glMatrixMode (GL_MODELVIEW);
 }
 
 void displayGame2D() {
@@ -95,7 +97,7 @@ void displayGame2D() {
 		glPushMatrix();
 		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
 		t->desenhar();
-		glPopMatrix();		
+		glPopMatrix();
 	}
 
 	//Desenha o jogador
@@ -112,7 +114,7 @@ void displayGame2D() {
 		glPushMatrix();
 		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
 		t->desenhar2D();
-		glPopMatrix();		
+		glPopMatrix();
 	}
 }
 
@@ -146,7 +148,7 @@ void displayGame3D() {
 		glPushMatrix();
 		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
 		t->desenhar();
-		glPopMatrix();		
+		glPopMatrix();
 	}
 
 	//Desenha o jogador
@@ -162,28 +164,28 @@ void displayGame3D() {
 		CarroInimigo* t = *it;
 		glPushMatrix();
 		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
-		t->desenhar2D();
-		glPopMatrix();		
+		t->desenhar3D();
+		glPopMatrix();
 	}
 }
 
 void displayMap() {
-    glMatrixMode (GL_PROJECTION);
-    //Push to recover original PROJECTION MATRIX
-    glPushMatrix();
+    	glMatrixMode (GL_PROJECTION);
+    	//Push to recover original PROJECTION MATRIX
+    	glPushMatrix();
         glLoadIdentity();
         glOrtho (-pistaExterna->raio, pistaExterna->raio, -pistaExterna->raio, pistaExterna->raio, -1, 1);
     	glPushAttrib(GL_ENABLE_BIT);
-		    glDisable(GL_LIGHTING);
-		    glDisable(GL_TEXTURE_2D);
-		    glMatrixMode(GL_MODELVIEW);
-		    glPushMatrix();
-		    	glTranslatef(0.750 * pistaExterna->raio, -0.750 * pistaExterna->raio , 1);
-		    	glScalef(0.25, 0.25, 1);
-		    	displayGame2D();
-		    glPopMatrix();
-			glMatrixMode(GL_PROJECTION);
-		glPopAttrib();
+	    glDisable(GL_LIGHTING);
+	    glDisable(GL_TEXTURE_2D);
+	    glMatrixMode(GL_MODELVIEW);
+	    glPushMatrix();
+	    	glTranslatef(0.750 * pistaExterna->raio, -0.750 * pistaExterna->raio , 1);
+	    	glScalef(0.25, 0.25, 1);
+	    	displayGame2D();
+	    glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+	glPopAttrib();
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -199,8 +201,14 @@ void display() {
 	glLoadIdentity();
 
 	glPushMatrix();
+
+  char text[300];
+
 	if (camera->getCurrentCamera() == 1) {
 		//Câmera no cockpit (ajustar)
+    sprintf(text, "Cockpit Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
 
@@ -211,10 +219,13 @@ void display() {
 		camera->lookAt(ex, ey, ez,
 			   px, py, 0,
 			   0, 0, 1);
-
 	}
 	else if (camera->getCurrentCamera() == 2) {
 		//Câmera do canhão (ajustar)
+
+    sprintf(text, "Cannon Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
 		double pz = 1.0;//jogador->getAltura();
@@ -225,10 +236,12 @@ void display() {
 			   px, py, 0,
 			   0, 1, 0);
 
-
 	}
-	else if (camera->getCurrentCamera() == 3) {		
+	else if (camera->getCurrentCamera() == 3) {
 		//Câmera atrás do carro, seguindo sua posição
+    sprintf(text, "Dynamic Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
 		double pz = jogador->getAltura();
@@ -289,17 +302,15 @@ void display() {
 	}
 
 	//Desenha o tempo na tela
-	glColor3f(1.0, 1.0, 1.0);
-	char text[300];
-	sprintf(text, "Tempo: %0d:%0d:%0d", (int) timerHour, (int) timerMin, (int) timerSeg);
-	printText2D(0.85, 0.99, text);
+	sprintf(text, "Tempo: %02d:%02d:%02d", (int) timerHour, (int) timerMin, (int) timerSeg);
+	printText2D(0.7, 0.98, text, 1, 1, 1);
 
 	if (gameOver) {
 		if (gameWon)
 		  sprintf(text, "Voce venceu");
 		else
 		  sprintf(text, "Voce perdeu");
-		printText2D(0.44, 0.5, text);	
+		printText2D(0.44, 0.5, text, 1, 1, 1);
 	}
 
     //Desenha na tela
