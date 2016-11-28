@@ -1,5 +1,6 @@
 #include "leitor.h"
 #include "camera.h"
+#include "Obj.h"
 
 using namespace std;
 
@@ -9,7 +10,8 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(1, 60, 1, 350);
+Camera* camera = new Camera(2, 60, 1, 550);
+GLUquadric* o = gluNewQuadric();
 
 //Dimensões da janela
 double janelaLarg;
@@ -24,6 +26,7 @@ bool gameWon = false;
 bool gameOver = false;
 int currentCheckpoint = 0;
 bool mapActive = false;
+bool lightEnabled = true;
 
 //Controla o movimento no teclado
 int keyState[256];
@@ -119,11 +122,20 @@ void displayGame2D() {
 }
 
 void displayGame3D() {
+  glPushAttrib(GL_ENABLE_BIT);
+  glDisable(GL_LIGHTING);
 
 	//Desenha a pista externa
 	glPushMatrix();
 	glTranslatef(pistaExterna->centro.x, pistaExterna->centro.y, 0);
-	desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+  glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+  gluDisk(o, 0, pistaExterna->raio, 30, 3);
+  glColor3f(0, 1, 1);
+  gluCylinder(o, pistaExterna->raio, pistaExterna->raio, jogador->getAltura() * 40, 30, 2);
+  glTranslatef(0, 0, jogador->getAltura() * 40);
+  glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+  //gluDisk(o, 0, pistaExterna->raio, 30, 3);
+  //desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
 	glPopMatrix();
 
 	//Desenha a pista interna
@@ -131,7 +143,7 @@ void displayGame3D() {
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
 	glRotatef(90, 1, 0, 0);
 	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-	DrawCylinder(pistaInterna->raio, 1);
+	DrawCylinder(pistaInterna->raio, 20);
 	//DrawSphere(internal, 1);
 	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
 	glPopMatrix();
@@ -141,6 +153,8 @@ void displayGame3D() {
 	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0);
 	desenhaRetangulo(linha->largura, linha->altura, linha->fill.r, linha->fill.g, linha->fill.b);
 	glPopMatrix();
+
+  glPopAttrib();
 
 	//Desenha o tiro
 	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
@@ -170,22 +184,22 @@ void displayGame3D() {
 }
 
 void displayMap() {
-    	glMatrixMode (GL_PROJECTION);
-    	//Push to recover original PROJECTION MATRIX
-    	glPushMatrix();
-        glLoadIdentity();
-        glOrtho (-pistaExterna->raio, pistaExterna->raio, -pistaExterna->raio, pistaExterna->raio, -1, 1);
-    	glPushAttrib(GL_ENABLE_BIT);
-	    glDisable(GL_LIGHTING);
-	    glDisable(GL_TEXTURE_2D);
-	    glMatrixMode(GL_MODELVIEW);
-	    glPushMatrix();
-	    	glTranslatef(0.750 * pistaExterna->raio, -0.750 * pistaExterna->raio , 1);
-	    	glScalef(0.25, 0.25, 1);
-	    	displayGame2D();
-	    glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-	glPopAttrib();
+  glMatrixMode (GL_PROJECTION);
+  //Push to recover original PROJECTION MATRIX
+	glPushMatrix();
+    glLoadIdentity();
+    glOrtho (-pistaExterna->raio, pistaExterna->raio, -pistaExterna->raio, pistaExterna->raio, -1, 1);
+  	glPushAttrib(GL_ENABLE_BIT);
+      glDisable(GL_LIGHTING);
+      glDisable(GL_TEXTURE_2D);
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      	glTranslatef(0.750 * pistaExterna->raio, -0.750 * pistaExterna->raio , 1);
+      	glScalef(0.25, 0.25, 1);
+      	displayGame2D();
+      glPopMatrix();
+      glMatrixMode(GL_PROJECTION);
+    glPopAttrib();
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -228,11 +242,11 @@ void display() {
 
 		double px = jogador->getPosicao().x;
 		double py = jogador->getPosicao().y;
-		double pz = 1.0;//jogador->getAltura();
+		double pz = 300.0;//jogador->getAltura();
 
-		//double cx = px; //- 0.5 * sin(jogador->getAngCarro());
-		//double cy = py; //+ 0.5 * cos(jogador->getAngCarro());
-		camera->lookAt(px, py, pz,
+    double ex = px;//px + 300 * cos(jogador->getAngCarro() * DEG2RAD);
+    double ey = py;//py + 300 * sin(jogador->getAngCarro() * DEG2RAD);
+		camera->lookAt(ex, ey, pz,
 			   px, py, 0,
 			   0, 1, 0);
 
@@ -254,6 +268,9 @@ void display() {
 			   px, py, pz,
 			   0, 0, 1);
 	}
+
+  GLfloat light_position[] = {0, 1, 1, 1};
+  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
 	glPushMatrix();
 	displayGame3D();
@@ -333,6 +350,14 @@ void keyPress(unsigned char key, int x, int y) {
 		case 'm':
 		case 'M':
 			mapActive = !mapActive;
+      break;
+    case 'l':
+    case 'L':
+      if (!lightEnabled)
+        glEnable(GL_LIGHTING);
+      else
+        glDisable(GL_LIGHTING);
+      lightEnabled = !lightEnabled;
 			break;
 	}
 
@@ -362,9 +387,9 @@ void gameRun(GLdouble currentTime, GLdouble timeDifference) {
 			jogador->andar(direction, timeDifference);
 		}
 		if (keyState['A'] || keyState['a'])
-			jogador->virarRoda(1.5);
+			jogador->virarRoda(3);
 		if (keyState['D'] || keyState['d'])
-			jogador->virarRoda(-1.5);
+			jogador->virarRoda(-3);
 
 		//Testa se houve colisão
 		if (jogador->colisaoCarro(jogador, inimigos) || colisaoCirc(*pistaInterna, jogador->getCirculo()) || !dentroCirc(*pistaExterna, jogador->getCirculo()))
@@ -499,16 +524,16 @@ void init() {
     //Modelo 3D
     glEnable(GL_DEPTH_TEST);
     //glEnable( GL_TEXTURE_2D );
-    //glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHTING);
     glShadeModel (GL_SMOOTH);
     glDepthFunc(GL_LEQUAL);
-
+    glEnable(GL_LIGHT0);
 }
 
 int main(int argc, char** argv) {
 	readXML(argv[1], "config.xml", enemyAttributes, jogador, inimigos, pistaInterna, pistaExterna, linha);
 	janelaLarg = 500;
-	janelaAlt = 500;
+	janelaAlt = 700;
    	glutInit(&argc, argv);
    	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
    	glutInitWindowSize(janelaLarg, janelaAlt);

@@ -17,12 +17,12 @@ typedef struct
     double X;
     double Y;
     double Z;
-    
-    //Vertex normal 
+
+    //Vertex normal
     double nX;
     double nY;
     double nZ;
-    
+
     //Vertex texture coordinate
     double U;
     double V;
@@ -33,11 +33,12 @@ typedef struct
     VERTICES * vtx;
     int numVtx;
     double radius;
-} OBJ;
+} Esfera;
 
 typedef struct ponto {
 	double x;
 	double y;
+  double z;
 } Ponto;
 
 typedef struct cor {
@@ -78,8 +79,8 @@ void desenhaCirculo(double raio, double r, double g, double b);
 void desenhaCirculoLinha(double raio, double r, double g, double b);
 
 //Funções 3D
-void DrawSphere (OBJ* objEarth, GLuint texture);
-OBJ * CreateSphere (double R, double space) ;
+void DrawSphere (Esfera* EsferaEarth, GLuint texture);
+Esfera * CreateSphere (double R, double space) ;
 void DisplayPlane (GLuint texture);
 void DrawCylinder(double radius, double length);
 

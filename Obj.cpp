@@ -8,7 +8,6 @@ bool Obj::loadFile(const char* path){
 	std::vector< double* > temp_vertices;
 	std::vector< double* > temp_uvs;
 	std::vector< double* > temp_normals;
-
 	FILE * file = fopen(path, "r");
 	if( file == NULL ){
 	    printf("Impossible to open the file !\n");
@@ -78,10 +77,10 @@ bool Obj::loadFile(const char* path){
 
 void Obj::draw(){
 	glBegin(GL_TRIANGLES);
-		glColor3d(1.0,1.0,1.0);
-		for(int i = 0; i < out_vertices.size(); i++){
-			glNormal3dv(out_normals.at(i));
-			glVertex3dv(out_vertices.at(i));
+		//glColor3d(1.0,1.0,1.0);
+		for(int i = 0; i < vertices.size(); i++){
+			glNormal3dv(normais.at(i));
+			glVertex3dv(vertices.at(i));
 		}
 	glEnd();
 }

@@ -16,7 +16,7 @@ void DisplayPlane (GLuint texture)
     glMaterialfv(GL_FRONT, GL_DIFFUSE, materialColorD);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-    
+
     //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT  );//X
     //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );//Y
 
@@ -40,11 +40,11 @@ void DisplayPlane (GLuint texture)
 }
 
 //Esfera
-OBJ * CreateSphere (double R, double space) 
+Esfera * CreateSphere (double R, double space)
 {
-    OBJ *obj = new OBJ;
-    
-    obj->numVtx = (180 / space) * 
+    Esfera *obj = new Esfera;
+
+    obj->numVtx = (180 / space) *
                   (2 + 360 / (2*space)) * 4;
     obj->vtx = new VERTICES[ obj->numVtx ];
     obj->radius = R;
@@ -59,13 +59,13 @@ OBJ * CreateSphere (double R, double space)
         {
             lVR = vR;
             lHR = hR;
-            obj->vtx[n].X = R * 
-                    sin(lHR / 180 * M_PI) * 
+            obj->vtx[n].X = R *
+                    sin(lHR / 180 * M_PI) *
                     sin(lVR / 180 * M_PI);
-            obj->vtx[n].Y = R * 
-                    cos(lHR / 180 * M_PI) * 
+            obj->vtx[n].Y = R *
+                    cos(lHR / 180 * M_PI) *
                     sin(lVR / 180 * M_PI);
-            obj->vtx[n].Z = R * 
+            obj->vtx[n].Z = R *
                     cos(lVR / 180 * M_PI);
             obj->vtx[n].V = lVR / 180;
             obj->vtx[n].U = lHR / 360;
@@ -121,7 +121,7 @@ OBJ * CreateSphere (double R, double space)
     return obj;
 }
 
-void DrawSphere (OBJ* objEarth, GLuint texture)
+void DrawSphere (Esfera* objEarth, GLuint texture)
 {
     GLfloat materialEmission[] = { 0.10, 0.10, 0.10, 1};
     GLfloat materialColorA[] = { 0.2, 0.2, 0.2, 1};
@@ -129,7 +129,7 @@ void DrawSphere (OBJ* objEarth, GLuint texture)
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1};
     GLfloat mat_shininess[] = { 100.0 };
     glColor3f(1,1,1);
- 
+
     glMaterialfv(GL_FRONT, GL_EMISSION, materialEmission);
     glMaterialfv(GL_FRONT, GL_AMBIENT, materialColorA);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, materialColorD);
@@ -168,11 +168,11 @@ void DrawCylinder(double radius, double length) {
 
 //Distância entre pontos
 double distPonto(Ponto p1, Ponto p2) {
-	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
 }
 
-int outOfBounds(Ponto p, double bBoxLeft, double bBoxRight, double bBoxBottom, double bBoxTop) {
-	return p.x > bBoxRight || p.x < bBoxLeft || p.y > bBoxTop || p.y < bBoxBottom;
+int outOfBounds(Ponto p, double bBoxLeft, double bBoxRight, double bBoxBottom, double bBoxTop){//, double bBoxHeight) {
+	return p.x > bBoxRight || p.x < bBoxLeft || p.y > bBoxTop || p.y < bBoxBottom; //|| p.z > bBoxHeight;
 }
 
 

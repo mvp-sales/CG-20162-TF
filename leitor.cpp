@@ -35,13 +35,14 @@ Cor converterCor(const char* strCor) {
 }
 
 void relativizarPontos(CarroJogador* jogador, list<CarroInimigo*>& inimigos, Circulo* pistaInterna, Circulo* pistaExterna, Retangulo* linha) {
-	
+
 	double relx = pistaExterna->centro.x;
 	double rely = pistaExterna->centro.y;
 
 	//Posiciona a pista interna
 	pistaInterna->centro.x = pistaInterna->centro.x - relx;
 	pistaInterna->centro.y = rely - pistaInterna->centro.y;
+	pistaInterna->centro.z = 0;
 
 	//Posiciona os inimigos
 	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
@@ -49,6 +50,7 @@ void relativizarPontos(CarroJogador* jogador, list<CarroInimigo*>& inimigos, Cir
 		Ponto p = ci->getCirculo().centro;
 		p.x = p.x - relx;
 		p.y = rely - p.y;
+		p.z = 0;
 		ci->setPosicao(p);
 		ci->alinharAngulo();
 	}
@@ -57,15 +59,18 @@ void relativizarPontos(CarroJogador* jogador, list<CarroInimigo*>& inimigos, Cir
 	Ponto p = jogador->getCirculo().centro;
 	p.x = p.x - relx;
 	p.y = rely - p.y;
+	p.z = 0;
 	jogador->setPosicao(p);
 
 	//Posiciona a largada
 	linha->vEsqSup.x = linha->vEsqSup.x - relx;
 	linha->vEsqSup.y = rely - linha->vEsqSup.y;
+	linha->vEsqSup.z = 0;
 
 	//Centraliza a pista externa à origem
 	pistaExterna->centro.x = 0.0;// pistaExterna->raio;
 	pistaExterna->centro.y = 0.0; //pistaExterna->raio;
+	pistaExterna->centro.z = 0.0;
 }
 
 void readSVG(char* path, char* file, EnemyAttr* enemyAttr, CarroJogador* jogador, list<CarroInimigo*>& inimigos, Circulo* pistaInterna, Circulo* pistaExterna, Retangulo* linha){
@@ -75,7 +80,7 @@ void readSVG(char* path, char* file, EnemyAttr* enemyAttr, CarroJogador* jogador
 	arquivo = strcat(arquivo, file);
    	TiXmlDocument doc(arquivo);
 	bool loadOkay = doc.LoadFile();
-	
+
 	if ( !loadOkay )
 	{
 		printf( "Falha na leitura do arquivo SVG. Erro='%s'. \n", doc.ErrorDesc() );

@@ -21,6 +21,10 @@ void Carro::setAngRodas(double ang) {
 }
 
 //Getters
+bool Carro::isPlayer() {
+	return _isPlayer;
+}
+
 double Carro::getAngCanhaoH() {
 	return _angCanhaoH;
 }
@@ -71,6 +75,22 @@ bool Carro::colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros) {
 	return false;
 }
 
+void Carro::desenharModelo() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorChassis);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
+	modelo->draw();
+}
+
+void Carro::desenharRoda() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionRodas);
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorRodas);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularRodas);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessRodas);
+	roda->draw();
+}
+
 void Carro::virarRoda(double ang) {
 	_angRodas += ang;
 	if (_angRodas < -LIMITE_ANGULO) {
@@ -100,8 +120,8 @@ void Carro::virarCarro(double taxa, GLdouble timeDiff) {
 
 void Carro::girarRodas(int direction, GLdouble timeDiff) {
 	_angRodasGiro += (1 / DEG2RAD) * direction * timeDiff * this->getVelCarro() / (this->getCirculo().raio * RODA_WIDTH);
-	if (_angRodasGiro < 0)	_angRodasGiro = _angRodasGiro + 360;
-	else if (_angRodasGiro > 360)	_angRodasGiro = _angRodasGiro - 360;
+	if (_angRodasGiro < 0)	_angRodasGiro += 360;
+	else if (_angRodasGiro > 360)	_angRodasGiro -= 360;
 }
 
 
@@ -253,42 +273,50 @@ void Carro::desenhar3D() {
 	//O carro assume que o raio base é de 1
 	glPushMatrix();
 		//Escala ao círculo
-		glScalef(_circ->raio*2, _circ->raio*2, _circ->raio*2);
-		//Rotaciona o carro
-		glRotatef(_angCarro, 0, 0, 1);
+		if (this->isPlayer())
+			glScalef(_circ->raio / 5, _circ->raio / 6, _circ->raio / 5);
+		else
+			glScalef(_circ->raio / 4, _circ->raio / 5, _circ->raio / 5);
 		//Sobe o carro
-		glTranslatef(0, 0, RODA_WIDTH / 2.0);
+		//glTranslatef(0, 0, RODA_WIDTH / 2.0);
 		//Desenha a base
 		glPushMatrix();
-			glTranslatef(0, 0, BASE_LENGTH / 2.0);
-			glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);
+			//glTranslatef(0, 0, BASE_LENGTH / 2.0);
+			//glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);
+			glRotatef(90, 1, 0, 0);
+			glRotatef(180, 0, 1, 0);
+			glRotatef(_angCarro, 0, 1, 0);
 			glColor3f(corChassis[0], corChassis[1], corChassis[2]);
-			glutSolidCube(1);
+			this->desenharModelo();
+			//glutSolidCube(1);
 		glPopMatrix();
+
+		//Rotaciona o carro
+		glRotatef(_angCarro, 0, 0, 1);
 
 		//Desenha os acoplamentos e as rodas
 
 		//Canto inferior esquerdo
-		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
+		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
 
 		//Canto superior esquerdo
-		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
+		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
 
 		//Canto superior direito
-		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
+		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
 
 		//Canto inferior direito
-		desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
+		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
 
 		//Desenha o canhão
 		glPushMatrix();
-			glTranslatef(0, BASE_HEIGHT/2, BASE_LENGTH / 2);
+			//glTranslatef(0, BASE_HEIGHT/2, BASE_LENGTH / 2);
 			//Rotação horizontal
-			glRotatef(this->getAngCanhaoH(), 0, 0, 1);
+			//glRotatef(this->getAngCanhaoH(), 0, 0, 1);
 			//Rotação vertical
 			//glRotatef(this->getAngCanhaoV(), 1, 0, 0);
-			glColor3f(corCanhao[0], corCanhao[1], corCanhao[2]);
-			DrawCylinder(CANHAO_WIDTH / 2.0, CANHAO_HEIGHT);
+			//glColor3f(corCanhao[0], corCanhao[1], corCanhao[2]);
+			//DrawCylinder(CANHAO_WIDTH / 2.0, CANHAO_HEIGHT);
 		glPopMatrix();
 
 	glPopMatrix();

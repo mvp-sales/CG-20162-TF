@@ -2,6 +2,7 @@
 #define CARRO_H
 
 #include "figuras.h"
+#include "Obj.h"
 #include <list>
 
 #define LIMITE_ANGULO 45
@@ -30,6 +31,7 @@ class CarroInimigo;
 class Tiro {
 	private:
 		Circulo* _circ;
+		Esfera* _esfera;
 		float _ang;
 		float _velTiro;
 		bool _isPlayerShot;
@@ -40,17 +42,20 @@ class Tiro {
 			_circ->raio = raio;
 			_velTiro = velTiro;
 			_ang = ang;
+			_esfera = CreateSphere(raio, 16);
 		};
 		~Tiro() {
 			delete _circ;
 		};
 		Circulo getCirculo();
+		Esfera* getEsfera();
 		Ponto getPosicao();
 		bool isPlayerShot();
 		void setPlayerShot(bool playerShot);
 		bool colisaoCarro(Carro* carro);
 		void updateTiro(double time);
 		void desenhar();
+		//void desenhar3D();
 };
 
 class Carro {
@@ -65,9 +70,22 @@ class Carro {
 		double _angRodasGiro;
 		double _posRanhuras;
 		bool _isPlayer;
-		double corChassis[3];
-		double corRodas[3];
-		double corCanhao[3];
+		GLfloat corChassis[3];
+		GLfloat matEmissionChassis[4];
+		GLfloat matColorChassis[4];
+		GLfloat matSpecularChassis[4];
+		GLfloat matShininessChassis[1];
+		GLfloat corRodas[3];
+		GLfloat matEmissionRodas[4];
+		GLfloat matColorRodas[4];
+		GLfloat matSpecularRodas[4];
+		GLfloat matShininessRodas[1];
+		GLfloat corCanhao[3];
+		GLfloat matEmissionCanhao[4];
+		GLfloat matColorCanhao[4];
+		GLfloat matSpecularCanhao[4];
+		GLfloat matShininessCanhao[1];
+		Obj *modelo, *roda, *canhao;
 
 		void desenhaAcopl2D(double width, double height, double proportion, int top, double angulo);
 		void desenhaAcopl3D(double width, double height, double proportion, int top, double angulo);
@@ -85,20 +103,20 @@ class Carro {
 		~Carro() {
 			delete _circ;
 		}
-		bool isPlayer() {
-			return _isPlayer;
-		};
+		bool isPlayer();
+		double getAltura();
+		double getAngRodas();
+		double getAngRodasGiro();
 		double getAngCarro();
 		double getAngCanhaoH();
 		double getAngCanhaoV();
-		double getAngRodas();
-		double getAngRodasGiro();
 		Circulo getCirculo();
 		Ponto getPosicao();
 		double getVelCarro();
 		double getTurnRate();
-		double getAltura();
 		bool colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros);
+		void desenharModelo();
+		void desenharRoda();
 		void setAngRodas(double ang);
 		void setPosicao(Ponto pos);
 		void setRaio(double raio);
@@ -126,7 +144,35 @@ class CarroJogador : public Carro {
 			corCanhao[0] = 0.1;
 			corCanhao[1] = 0.7;
 			corCanhao[2] = 0.1;
+			for (int i = 0; i < 4; i++) {
+				if (i < 3) {
+					matColorChassis[i] = corChassis[i];
+					matColorRodas[i] = corRodas[i];
+					matColorCanhao[i] = corCanhao[i];
+					matEmissionCanhao[i] = 0;
+					matEmissionRodas[i] = 0;
+					matEmissionChassis[i] = 0;
+				}
+				else {
+					matColorChassis[i] = 1;
+					matColorRodas[i] = 1;
+					matColorCanhao[i] = 1;
+					matEmissionCanhao[i] = 1;
+					matEmissionRodas[i] = 1;
+					matEmissionChassis[i] = 1;
+					matShininessCanhao[0] = 100;
+					matShininessChassis[0] = 100;
+					matShininessRodas[0] = 100;
+				}
+				matSpecularCanhao[i] = 1;
+				matSpecularChassis[i] = 1;
+				matSpecularRodas[i] = 1;
+			}
 			_isPlayer = true;
+			modelo = new Obj();
+			modelo->loadFile("Modelos/InterceptorFiles/InterceptorChassi.obj");
+			roda = new Obj();
+			roda->loadFile("Modelos/InterceptorFiles/InterceptorRodas.obj");
 		}
 		Tiro* atirar();
 		void andar(int direction, GLdouble timeDiff);
@@ -150,10 +196,38 @@ class CarroInimigo : public Carro {
 			corCanhao[0] = 0.7;
 			corCanhao[1] = 0.1;
 			corCanhao[2] = 0.1;
+			for (int i = 0; i < 4; i++) {
+				if (i < 3) {
+					matColorChassis[i] = corChassis[i];
+					matColorRodas[i] = corRodas[i];
+					matColorCanhao[i] = corCanhao[i];
+					matEmissionCanhao[i] = 0;
+					matEmissionRodas[i] = 0;
+					matEmissionChassis[i] = 0;
+				}
+				else {
+					matColorChassis[i] = 1;
+					matColorRodas[i] = 1;
+					matColorCanhao[i] = 1;
+					matEmissionCanhao[i] = 1;
+					matEmissionRodas[i] = 1;
+					matEmissionChassis[i] = 1;
+					matShininessCanhao[0] = 100;
+					matShininessChassis[0] = 100;
+					matShininessRodas[0] = 100;
+				}
+				matSpecularCanhao[i] = 1;
+				matSpecularChassis[i] = 1;
+				matSpecularRodas[i] = 1;
+			}
 			_fireTime = 0;
 			_isPlayer = false;
 			_reverseFlag = 1;
 			_reverseTime = 0;
+			modelo = new Obj();
+			modelo->loadFile("Modelos/BuggyParts/BuggyChassi.obj");
+			roda = new Obj();
+			roda->loadFile("Modelos/BuggyParts/BuggyWheels.obj");
 		}
 		void reverterMovimento() {
 			_reverseTime = 0;
