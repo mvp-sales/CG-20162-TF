@@ -54,15 +54,16 @@ void adjustCamera() {
     sprintf(text, "Cockpit Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
 
-    double px = jogador->getPosicao().x;
-    double py = jogador->getPosicao().y;
+    double ex = jogador->getPosicao().x - 1 * jogador->getCirculo().raio / 5;
+    double ey = jogador->getPosicao().y;
+    double ez = jogador->getAltura();
 
-    double ex = px + (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-    double ey = py - (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-    double ez = jogador->getAltura() * 40;
+    double px = ex - (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+    double py = ey + (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+    double pz = jogador->getAltura();
 
     camera->lookAt(ex, ey, ez,
-         px, py, 0,
+         px, py, pz,
          0, 0, 1);
   }
   else if (camera->getCurrentCamera() == 2) {
@@ -70,10 +71,10 @@ void adjustCamera() {
 
     sprintf(text, "Cannon Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-
-    double px = jogador->getPosicao().x;
-    double py = jogador->getPosicao().y;
-    double pz = 300.0;//jogador->getAltura();
+    //CarroInimigo* ci = inimigos.front();
+    double px = jogador->getPosicao().x;//ci->getPosicao().x;
+    double py = jogador->getPosicao().y;//ci->getPosicao().y
+    double pz = 300;//jogador->getAltura();
 
     double ex = px;//px + 300 * cos(jogador->getAngCarro() * DEG2RAD);
     double ey = py;//py + 300 * sin(jogador->getAngCarro() * DEG2RAD);
@@ -93,7 +94,7 @@ void adjustCamera() {
 
     double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
     double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-    double ez = pz * 40;
+    double ez = pz * 4;
 
     camera->lookAt(ex, ey, ez,
          px, py, pz,
@@ -190,8 +191,8 @@ void displayGame3D() {
   glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
   gluDisk(o, 0, pistaExterna->raio, 30, 3);
   glColor3f(0, 1, 1);
-  gluCylinder(o, pistaExterna->raio, pistaExterna->raio, jogador->getAltura() * 40, 30, 2);
-  glTranslatef(0, 0, jogador->getAltura() * 40);
+  gluCylinder(o, pistaExterna->raio, pistaExterna->raio, jogador->getAltura() * 4, 30, 2);
+  glTranslatef(0, 0, jogador->getAltura() * 4);
   glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
   //gluDisk(o, 0, pistaExterna->raio, 30, 3);
   //desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
@@ -200,9 +201,9 @@ void displayGame3D() {
 	//Desenha a pista interna
 	glPushMatrix();
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
-	glRotatef(90, 1, 0, 0);
 	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-	DrawCylinder(pistaInterna->raio, 20);
+  gluCylinder(o, pistaInterna->raio, pistaInterna->raio, jogador->getAltura() * 4, 30, 2);
+  //DrawCylinder(pistaInterna->raio, 20);
 	//DrawSphere(internal, 1);
 	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
 	glPopMatrix();
@@ -499,7 +500,7 @@ void init() {
     glClearColor(1.0, 1.0, 1.0, 0);
     //Modelo 3D
     glEnable(GL_DEPTH_TEST);
-    //glEnable( GL_TEXTURE_2D );
+    glEnable( GL_TEXTURE_2D );
     glEnable(GL_LIGHTING);
     glShadeModel (GL_SMOOTH);
     glDepthFunc(GL_LEQUAL);

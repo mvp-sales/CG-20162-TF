@@ -70,7 +70,7 @@ double Carro::getTurnRate() {
 	return _angRodas/1000;
 }
 double Carro::getAltura() {
-	return 1.0;
+	return 2.7 * this->getCirculo().raio / 5;
 }
 
 
@@ -85,26 +85,89 @@ bool Carro::colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros) {
 	return false;
 }
 
-void Carro::desenharModelo() {
+void Carro::desenharBodyPart() {
 	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorChassis);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorAChassis);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDChassis);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
 	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
-	chassi->draw();
+
+	glEnable(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_BODYPART));
+
+	bodypart->draw();
+
+	glDisable(GL_TEXTURE_2D);
 }
 
-void Carro::desenharRoda() {
+void Carro::desenharChassi() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorAChassis);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDChassis);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
+
+	glEnable(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_CHASSI));
+	chassi->draw();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
+void Carro::desenharEngine() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorAChassis);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDChassis);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
+
+	glEnable(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_ENGINE));
+	engine->draw();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
+void Carro::desenharInterior() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorAChassis);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDChassis);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
+
+	glEnable(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_INTERIOR));
+	interior->draw();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
+void Carro::desenharRoda(Obj* wheel) {
 	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionRodas);
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorRodas);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorARodas);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDRodas);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularRodas);
 	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessRodas);
 
 	glEnable(GL_TEXTURE_2D);
+
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_WHEEL));
 
-	rodas->draw();
+	wheel->draw();
 
 	glDisable(GL_TEXTURE_2D);
 }
@@ -302,28 +365,57 @@ void Carro::desenhar3D() {
 		glRotatef(_angCarro, 0, 1, 0);
 
 		//Desenha a base
-		glPushMatrix();
-			glColor3f(corChassis[0], corChassis[1], corChassis[2]);
-			this->desenharModelo();
-			//glutSolidCube(1);
-		glPopMatrix();
+		glColor3f(corChassis[0], corChassis[1], corChassis[2]);
+		this->desenharBodyPart();
+		this->desenharInterior();
+		this->desenharEngine();
+		this->desenharChassi();
 
 		//Desenha as rodas dianteiras
+
+		double adjustX, adjustY, adjustZ;
+		if (this->isPlayer()) {
+			adjustX = 2;
+			adjustY = 0.76;
+			adjustZ = 3.15;
+		}
+		else {
+			adjustX = 1.98;
+			adjustY = 0.96;
+			adjustZ = 3.16;
+		}
+
 		glPushMatrix();
-			glTranslatef(2, 0.76, 3.15);
+			glTranslatef(adjustX, adjustY, adjustZ);
 			glRotatef(this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
 			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
-			this->desenharRoda();
+			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
 		glPushMatrix();
 			glScalef(-1, 1, 1);
-			glTranslatef(2, 0.76, 3.15);
+			glTranslatef(adjustX, adjustY, adjustZ);
 			glRotatef(-this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
 			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
-			this->desenharRoda();
+			this->desenharRoda(frontwheel);
+		glPopMatrix();
+
+		//Desenha as rodas traseiras
+		glPushMatrix();
+			glTranslatef(adjustX, adjustY, -adjustZ);
+			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
+			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			this->desenharRoda(frontwheel);
+		glPopMatrix();
+
+		glPushMatrix();
+			glScalef(-1, 1, 1);
+			glTranslatef(adjustX, adjustY, -adjustZ);
+			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
+			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
 		//Desenha o canhão

@@ -15,6 +15,11 @@ double Camera::getAngle() {
 int Camera::getCurrentCamera() {
 	return cameraVision;
 }
+
+void Camera::setAngle(double angle) {
+	camAngle = angle;
+}
+
 void Camera::toggleCamera(int cameraVision) {
 	this->cameraVision = cameraVision;
 }

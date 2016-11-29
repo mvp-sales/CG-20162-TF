@@ -23,6 +23,7 @@ class Camera {
 		double getAngle();
 		double getNearZ();
 		double getFarZ();
+		void setAngle(double angle);
 		int getCurrentCamera();
 		void toggleCamera(int cameraVision);
 		void updateCamera(int w, int h);

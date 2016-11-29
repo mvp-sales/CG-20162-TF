@@ -78,21 +78,24 @@ class Carro {
 		bool _isPlayer;
 		GLfloat corChassis[3];
 		GLfloat matEmissionChassis[4];
-		GLfloat matColorChassis[4];
+		GLfloat matColorAChassis[4];
+		GLfloat matColorDChassis[4];
 		GLfloat matSpecularChassis[4];
 		GLfloat matShininessChassis[1];
 		GLfloat corRodas[3];
 		GLfloat matEmissionRodas[4];
-		GLfloat matColorRodas[4];
+		GLfloat matColorARodas[4];
+		GLfloat matColorDRodas[4];
 		GLfloat matSpecularRodas[4];
 		GLfloat matShininessRodas[1];
 		GLfloat corCanhao[3];
 		GLfloat matEmissionCanhao[4];
-		GLfloat matColorCanhao[4];
+		GLfloat matColorACanhao[4];
+		GLfloat matColorDCanhao[4];
 		GLfloat matSpecularCanhao[4];
 		GLfloat matShininessCanhao[1];
 		GLuint texturas[5];
-		Obj *chassi, *interior, *motor, *corpo, *rodas, *canhao;
+		Obj *chassi, *interior, *engine, *bodypart, *frontwheel, *backwheel, *cannon;
 
 		void desenhaAcopl2D(double width, double height, double proportion, int top, double angulo);
 		void desenhaAcopl3D(double width, double height, double proportion, int top, double angulo);
@@ -123,8 +126,11 @@ class Carro {
 		double getTurnRate();
 		GLuint getTextura(int i);
 		bool colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros);
-		void desenharModelo();
-		void desenharRoda();
+		void desenharBodyPart();
+		void desenharChassi();
+		void desenharEngine();
+		void desenharInterior();
+		void desenharRoda(Obj* wheel);
 		void setAngRodas(double ang);
 		void setPosicao(Ponto pos);
 		void setRaio(double raio);
@@ -155,17 +161,23 @@ class CarroJogador : public Carro {
 			corCanhao[2] = 0.1;
 			for (int i = 0; i < 4; i++) {
 				if (i < 3) {
-					matColorChassis[i] = corChassis[i];
-					matColorRodas[i] = corRodas[i];
-					matColorCanhao[i] = corCanhao[i];
-					matEmissionCanhao[i] = 0;
-					matEmissionRodas[i] = 0;
-					matEmissionChassis[i] = 0;
+					matColorAChassis[i] = 0.2;
+					matColorDChassis[i] = 1;
+					matColorARodas[i] = 0.2;
+					matColorDRodas[i] = 0.2;
+					matColorACanhao[i] = 0.2;
+					matColorDCanhao[i] = 0.2;
+					matEmissionCanhao[i] = 0.3;
+					matEmissionRodas[i] = 0.3;
+					matEmissionChassis[i] = 0.3;
 				}
 				else {
-					matColorChassis[i] = 1;
-					matColorRodas[i] = 1;
-					matColorCanhao[i] = 1;
+					matColorAChassis[i] = 1;
+					matColorDChassis[i] = 1;
+					matColorARodas[i] = 1;
+					matColorDRodas[i] = 1;
+					matColorACanhao[i] = 1;
+					matColorDCanhao[i] = 1;
 					matEmissionCanhao[i] = 1;
 					matEmissionRodas[i] = 1;
 					matEmissionChassis[i] = 1;
@@ -178,10 +190,18 @@ class CarroJogador : public Carro {
 				matSpecularRodas[i] = 1;
 			}
 			_isPlayer = true;
+			bodypart = new Obj();
+			bodypart->loadFile("Modelos/InterceptorFiles/InterceptorBodyPart.obj");
 			chassi = new Obj();
 			chassi->loadFile("Modelos/InterceptorFiles/InterceptorChassi.obj");
-			rodas = new Obj();
-			rodas->loadFile("Modelos/InterceptorFiles/InterceptorRodaDianteiraEsq.obj");
+			engine = new Obj();
+			engine->loadFile("Modelos/InterceptorFiles/InterceptorEngine.obj");
+			interior = new Obj();
+			interior->loadFile("Modelos/InterceptorFiles/InterceptorInterior.obj");
+			frontwheel = new Obj();
+			frontwheel->loadFile("Modelos/InterceptorFiles/InterceptorFrontWheel.obj");
+			backwheel = new Obj();
+			backwheel->loadFile("Modelos/InterceptorFiles/InterceptorBackWheel.obj");
 		}
 		Tiro* atirar();
 		void andar(int direction, GLdouble timeDiff);
@@ -207,17 +227,23 @@ class CarroInimigo : public Carro {
 			corCanhao[2] = 0.1;
 			for (int i = 0; i < 4; i++) {
 				if (i < 3) {
-					matColorChassis[i] = corChassis[i];
-					matColorRodas[i] = corRodas[i];
-					matColorCanhao[i] = corCanhao[i];
-					matEmissionCanhao[i] = 0;
-					matEmissionRodas[i] = 0;
-					matEmissionChassis[i] = 0;
+					matColorAChassis[i] = 0.2;
+					matColorDChassis[i] = 1;
+					matColorARodas[i] = 0.2;
+					matColorDRodas[i] = 0.2;
+					matColorACanhao[i] = 0.2;
+					matColorDCanhao[i] = 0.2;
+					matEmissionCanhao[i] = 0.3;
+					matEmissionRodas[i] = 0.3;
+					matEmissionChassis[i] = 0.3;
 				}
 				else {
-					matColorChassis[i] = 1;
-					matColorRodas[i] = 1;
-					matColorCanhao[i] = 1;
+					matColorAChassis[i] = 1;
+					matColorDChassis[i] = 1;
+					matColorARodas[i] = 1;
+					matColorDRodas[i] = 1;
+					matColorACanhao[i] = 1;
+					matColorDCanhao[i] = 1;
 					matEmissionCanhao[i] = 1;
 					matEmissionRodas[i] = 1;
 					matEmissionChassis[i] = 1;
@@ -233,10 +259,18 @@ class CarroInimigo : public Carro {
 			_isPlayer = false;
 			_reverseFlag = 1;
 			_reverseTime = 0;
+			bodypart = new Obj();
+			bodypart->loadFile("Modelos/BuggyParts/BuggyBodyPart.obj");
 			chassi = new Obj();
 			chassi->loadFile("Modelos/BuggyParts/BuggyChassi.obj");
-			rodas = new Obj();
-			rodas->loadFile("Modelos/BuggyParts/BuggyWheels.obj");
+			engine = new Obj();
+			engine->loadFile("Modelos/BuggyParts/BuggyEngine.obj");
+			interior = new Obj();
+			interior->loadFile("Modelos/BuggyParts/BuggyInterior.obj");
+			frontwheel = new Obj();
+			frontwheel->loadFile("Modelos/BuggyParts/BuggyFrontWheel.obj");
+			backwheel = new Obj();
+			backwheel->loadFile("Modelos/BuggyParts/BuggyBackWheel.obj");
 		}
 		void reverterMovimento() {
 			_reverseTime = 0;
