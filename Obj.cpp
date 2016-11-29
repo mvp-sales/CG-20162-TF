@@ -80,6 +80,7 @@ void Obj::draw(){
 		//glColor3d(1.0,1.0,1.0);
 		for(int i = 0; i < vertices.size(); i++){
 			glNormal3dv(normais.at(i));
+			glTexCoord3dv(texturas.at(i));
 			glVertex3dv(vertices.at(i));
 		}
 	glEnd();

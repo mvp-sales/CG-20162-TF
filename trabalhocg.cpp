@@ -1,6 +1,7 @@
 #include "leitor.h"
 #include "camera.h"
 #include "Obj.h"
+#include "imageloader.h"
 
 using namespace std;
 
@@ -41,6 +42,64 @@ double timerMin = 0;
 double timerHour = 0;
 GLdouble previousTime = 0;
 GLdouble startTime = 0;
+
+GLuint LoadTexture(const char* filename);
+void printText2D(GLfloat x, GLfloat y, char* text, GLdouble r, GLdouble g, GLdouble b);
+
+void adjustCamera() {
+  char text[300];
+
+  if (camera->getCurrentCamera() == 1) {
+    //Câmera no cockpit (ajustar)
+    sprintf(text, "Cockpit Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
+    double px = jogador->getPosicao().x;
+    double py = jogador->getPosicao().y;
+
+    double ex = px + (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+    double ey = py - (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+    double ez = jogador->getAltura() * 40;
+
+    camera->lookAt(ex, ey, ez,
+         px, py, 0,
+         0, 0, 1);
+  }
+  else if (camera->getCurrentCamera() == 2) {
+    //Câmera do canhão (ajustar)
+
+    sprintf(text, "Cannon Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
+    double px = jogador->getPosicao().x;
+    double py = jogador->getPosicao().y;
+    double pz = 300.0;//jogador->getAltura();
+
+    double ex = px;//px + 300 * cos(jogador->getAngCarro() * DEG2RAD);
+    double ey = py;//py + 300 * sin(jogador->getAngCarro() * DEG2RAD);
+    camera->lookAt(ex, ey, pz,
+         px, py, 0,
+         0, 1, 0);
+
+  }
+  else if (camera->getCurrentCamera() == 3) {
+    //Câmera atrás do carro, seguindo sua posição
+    sprintf(text, "Dynamic Camera");
+    printText2D(0.1, 0.1, text, 0, 1, 0);
+
+    double px = jogador->getPosicao().x;
+    double py = jogador->getPosicao().y;
+    double pz = jogador->getAltura();
+
+    double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+    double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+    double ez = pz * 40;
+
+    camera->lookAt(ex, ey, ez,
+         px, py, pz,
+         0, 0, 1);
+  }
+}
 
 void printText2D(GLfloat x, GLfloat y, char* text, GLdouble r, GLdouble g, GLdouble b)
 {
@@ -216,58 +275,8 @@ void display() {
 
 	glPushMatrix();
 
+  adjustCamera();
   char text[300];
-
-	if (camera->getCurrentCamera() == 1) {
-		//Câmera no cockpit (ajustar)
-    sprintf(text, "Cockpit Camera");
-    printText2D(0.1, 0.1, text, 0, 1, 0);
-
-		double px = jogador->getPosicao().x;
-		double py = jogador->getPosicao().y;
-
-		double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-		double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-		double ez = jogador->getAltura() * 40;
-
-		camera->lookAt(ex, ey, ez,
-			   px, py, 0,
-			   0, 0, 1);
-	}
-	else if (camera->getCurrentCamera() == 2) {
-		//Câmera do canhão (ajustar)
-
-    sprintf(text, "Cannon Camera");
-    printText2D(0.1, 0.1, text, 0, 1, 0);
-
-		double px = jogador->getPosicao().x;
-		double py = jogador->getPosicao().y;
-		double pz = 300.0;//jogador->getAltura();
-
-    double ex = px;//px + 300 * cos(jogador->getAngCarro() * DEG2RAD);
-    double ey = py;//py + 300 * sin(jogador->getAngCarro() * DEG2RAD);
-		camera->lookAt(ex, ey, pz,
-			   px, py, 0,
-			   0, 1, 0);
-
-	}
-	else if (camera->getCurrentCamera() == 3) {
-		//Câmera atrás do carro, seguindo sua posição
-    sprintf(text, "Dynamic Camera");
-    printText2D(0.1, 0.1, text, 0, 1, 0);
-
-		double px = jogador->getPosicao().x;
-		double py = jogador->getPosicao().y;
-		double pz = jogador->getAltura();
-
-		double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-		double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-		double ez = pz * 40;
-
-		camera->lookAt(ex, ey, ez,
-			   px, py, pz,
-			   0, 0, 1);
-	}
 
   GLfloat light_position[] = {0, 1, 1, 1};
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
@@ -275,39 +284,6 @@ void display() {
 	glPushMatrix();
 	displayGame3D();
 	glPopMatrix();
-
-	//Desenha o plano
-	/*glPushMatrix();
-	glTranslatef(0,0,-1.0);
-    	glRotatef(90, 1, 0, 0);
-    	glTranslatef(0, 0, -pistaExterna->raio);
-	glScalef(pistaExterna->raio,pistaExterna->raio,1);
-	DisplayPlane(1);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0,0,-1.0);
-    	glRotatef(90, 1, 0, 0);
-    	glTranslatef(0, 0, pistaExterna->raio);
-	glScalef(pistaExterna->raio,pistaExterna->raio,1);
-	DisplayPlane(1);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0,0,-1.0);
-    	glRotatef(90, 0, 1, 0);
-    	glTranslatef(0, 0, pistaExterna->raio);
-	glScalef(pistaExterna->raio,pistaExterna->raio,1);
-	DisplayPlane(1);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(0,0,-1.0);
-    	glRotatef(90, 0, 1, 0);
-    	glTranslatef(0, 0, -pistaExterna->raio);
-	glScalef(pistaExterna->raio,pistaExterna->raio,1);
-	DisplayPlane(1);
-	glPopMatrix();*/
 
 	glPopMatrix();
 
@@ -490,9 +466,9 @@ void idle(void) {
     currentTime = glutGet(GLUT_ELAPSED_TIME);
     timeDifference = currentTime - previousTime; // Elapsed time from the previous frame.
     previousTime = currentTime; //Update previous time
-	if (gameStart && !gameOver)
-		gameRun(currentTime, timeDifference);
-	glutPostRedisplay();
+	  if (gameStart && !gameOver)
+		  gameRun(currentTime, timeDifference);
+	  glutPostRedisplay();
 }
 
 void mouseDrag(int x, int y) {
@@ -528,6 +504,26 @@ void init() {
     glShadeModel (GL_SMOOTH);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_LIGHT0);
+
+    GLuint enTextures[5] = {
+              LoadTexture("Texturas/BuggyTexturas/BuggyBodyPart.bmp"),
+              LoadTexture("Texturas/BuggyTexturas/BuggyChassi.bmp"),
+              LoadTexture("Texturas/BuggyTexturas/BuggyEngine.bmp"),
+              LoadTexture("Texturas/BuggyTexturas/BuggyInterior.bmp"),
+              LoadTexture("Texturas/BuggyTexturas/BuggyWheel.bmp")
+            };
+    GLuint plTextures[5] = {
+      LoadTexture("Texturas/InterceptorTexturas/InterceptorBodyPart.bmp"),
+      LoadTexture("Texturas/InterceptorTexturas/InterceptorChassi.bmp"),
+      LoadTexture("Texturas/InterceptorTexturas/InterceptorEngine.bmp"),
+      LoadTexture("Texturas/InterceptorTexturas/InterceptorInterior.bmp"),
+      LoadTexture("Texturas/InterceptorTexturas/InterceptorWheel.bmp")
+    };
+    for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
+  		CarroInimigo* t = *it;
+  		t->setTexturas(enTextures);
+  	}
+    jogador->setTexturas(plTextures);
 }
 
 int main(int argc, char** argv) {
@@ -550,4 +546,18 @@ int main(int argc, char** argv) {
    	glutReshapeFunc(reshape);
    	glutMainLoop();
    	return 0;
+}
+
+GLuint LoadTexture(const char* filename) {
+  GLuint texture;
+  Image* image = loadBMP(filename);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+  delete image;
+  return texture;
 }

@@ -19,6 +19,12 @@
 
 #define DIST_RANHURAS 0.5
 
+#define TEX_BODYPART 0
+#define TEX_CHASSI 1
+#define TEX_ENGINE 2
+#define TEX_INTERIOR 3
+#define TEX_WHEEL 4
+
 typedef struct {
 	double inimigoFireRate;
 	double inimigoVelCarro;
@@ -85,7 +91,8 @@ class Carro {
 		GLfloat matColorCanhao[4];
 		GLfloat matSpecularCanhao[4];
 		GLfloat matShininessCanhao[1];
-		Obj *modelo, *roda, *canhao;
+		GLuint texturas[5];
+		Obj *chassi, *interior, *motor, *corpo, *rodas, *canhao;
 
 		void desenhaAcopl2D(double width, double height, double proportion, int top, double angulo);
 		void desenhaAcopl3D(double width, double height, double proportion, int top, double angulo);
@@ -114,12 +121,14 @@ class Carro {
 		Ponto getPosicao();
 		double getVelCarro();
 		double getTurnRate();
+		GLuint getTextura(int i);
 		bool colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros);
 		void desenharModelo();
 		void desenharRoda();
 		void setAngRodas(double ang);
 		void setPosicao(Ponto pos);
 		void setRaio(double raio);
+		void setTexturas(GLuint texturas[5]);
 		void setVelTiro(double vtiro);
 		void setVelCarro(double vcarro);
 		void girarRodas(int direction, GLdouble timeDiff);
@@ -169,10 +178,10 @@ class CarroJogador : public Carro {
 				matSpecularRodas[i] = 1;
 			}
 			_isPlayer = true;
-			modelo = new Obj();
-			modelo->loadFile("Modelos/InterceptorFiles/InterceptorChassi.obj");
-			roda = new Obj();
-			roda->loadFile("Modelos/InterceptorFiles/InterceptorRodas.obj");
+			chassi = new Obj();
+			chassi->loadFile("Modelos/InterceptorFiles/InterceptorChassi.obj");
+			rodas = new Obj();
+			rodas->loadFile("Modelos/InterceptorFiles/InterceptorRodaDianteiraEsq.obj");
 		}
 		Tiro* atirar();
 		void andar(int direction, GLdouble timeDiff);
@@ -224,10 +233,10 @@ class CarroInimigo : public Carro {
 			_isPlayer = false;
 			_reverseFlag = 1;
 			_reverseTime = 0;
-			modelo = new Obj();
-			modelo->loadFile("Modelos/BuggyParts/BuggyChassi.obj");
-			roda = new Obj();
-			roda->loadFile("Modelos/BuggyParts/BuggyWheels.obj");
+			chassi = new Obj();
+			chassi->loadFile("Modelos/BuggyParts/BuggyChassi.obj");
+			rodas = new Obj();
+			rodas->loadFile("Modelos/BuggyParts/BuggyWheels.obj");
 		}
 		void reverterMovimento() {
 			_reverseTime = 0;

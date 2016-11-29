@@ -7,6 +7,12 @@ void Carro::setPosicao(Ponto pos) {
 void Carro::setRaio(double raio) {
 	_circ->raio = raio;
 }
+void Carro::setTexturas(GLuint texturas[5]) {
+	for (int i = 0; i < 5; i++) {
+		this->texturas[i] = texturas[i];
+	}
+}
+
 void Carro::setVelTiro(double vtiro) {
 	_velTiro = vtiro;
 }
@@ -52,6 +58,10 @@ Ponto Carro::getPosicao() {
 	return _circ->centro;
 }
 
+GLuint Carro::getTextura(int i) {
+	return texturas[i];
+}
+
 double Carro::getVelCarro() {
 	return _velCarro;
 }
@@ -80,7 +90,7 @@ void Carro::desenharModelo() {
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorChassis);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularChassis);
 	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessChassis);
-	modelo->draw();
+	chassi->draw();
 }
 
 void Carro::desenharRoda() {
@@ -88,7 +98,15 @@ void Carro::desenharRoda() {
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColorRodas);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularRodas);
 	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessRodas);
-	roda->draw();
+
+	glEnable(GL_TEXTURE_2D);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_WHEEL));
+
+	rodas->draw();
+
+	glDisable(GL_TEXTURE_2D);
 }
 
 void Carro::virarRoda(double ang) {
@@ -277,36 +295,36 @@ void Carro::desenhar3D() {
 			glScalef(_circ->raio / 5, _circ->raio / 6, _circ->raio / 5);
 		else
 			glScalef(_circ->raio / 4, _circ->raio / 5, _circ->raio / 5);
-		//Sobe o carro
-		//glTranslatef(0, 0, RODA_WIDTH / 2.0);
+
+		//Rotaciona e posiciona o carro
+		glRotatef(90, 1, 0, 0);
+		glRotatef(180, 0, 1, 0);
+		glRotatef(_angCarro, 0, 1, 0);
+
 		//Desenha a base
 		glPushMatrix();
-			//glTranslatef(0, 0, BASE_LENGTH / 2.0);
-			//glScalef(BASE_WIDTH, BASE_HEIGHT, BASE_LENGTH);
-			glRotatef(90, 1, 0, 0);
-			glRotatef(180, 0, 1, 0);
-			glRotatef(_angCarro, 0, 1, 0);
 			glColor3f(corChassis[0], corChassis[1], corChassis[2]);
 			this->desenharModelo();
 			//glutSolidCube(1);
 		glPopMatrix();
 
-		//Rotaciona o carro
-		glRotatef(_angCarro, 0, 0, 1);
+		//Desenha as rodas dianteiras
+		glPushMatrix();
+			glTranslatef(2, 0.76, 3.15);
+			glRotatef(this->getAngRodas(), 0, 1, 0);
+			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
+			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			this->desenharRoda();
+		glPopMatrix();
 
-		//Desenha os acoplamentos e as rodas
-
-		//Canto inferior esquerdo
-		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, 90);
-
-		//Canto superior esquerdo
-		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, 90);
-
-		//Canto superior direito
-		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 1, -90);
-
-		//Canto inferior direito
-		//desenhaAcopl3D(BASE_WIDTH, BASE_HEIGHT, ACOPL_PROPORTION, 0, -90);
+		glPushMatrix();
+			glScalef(-1, 1, 1);
+			glTranslatef(2, 0.76, 3.15);
+			glRotatef(-this->getAngRodas(), 0, 1, 0);
+			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
+			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			this->desenharRoda();
+		glPopMatrix();
 
 		//Desenha o canhão
 		glPushMatrix();
