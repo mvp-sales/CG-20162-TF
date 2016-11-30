@@ -71,8 +71,9 @@ void adjustCamera() {
 
     sprintf(text, "Cannon Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-    double px = jogador->getPosicao().x;//ci->getPosicao().x;
-    double py = jogador->getPosicao().y;//ci->getPosicao().y;
+    CarroInimigo* ci = inimigos.front();
+    double px = ci->getPosicao().x;//jogador->getPosicao().x;
+    double py = ci->getPosicao().y;//jogador->getPosicao().y
     double pz = 300;//jogador->getAltura();
 
     double ex = px; //+ 100 * cos(jogador->getAngCarro() * DEG2RAD);
@@ -152,15 +153,6 @@ void displayGame2D() {
 	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0);
 	desenhaRetangulo(linha->largura, linha->altura, linha->fill.r, linha->fill.g, linha->fill.b);
 	glPopMatrix();
-
-	//Desenha o tiro
-	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
-		Tiro* t = *it;
-		glPushMatrix();
-		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
-		t->desenhar();
-		glPopMatrix();
-	}
 
 	//Desenha o jogador
 	if (jogador != NULL) {

@@ -123,7 +123,10 @@ class Carro {
 		double getAngCanhaoH();
 		double getAngCanhaoV();
 		Circulo getCirculo();
+		double* getEscala();
 		Ponto getPosicao();
+		double* getProporcaoCanhao();
+		double getRaio();
 		double getVelCarro();
 		double getTurnRate();
 		GLuint getTextura(int i);
@@ -147,6 +150,7 @@ class Carro {
 		void virarCarro(double taxa, GLdouble timeDiff);
 		void moverRanhuras(int direction, GLdouble timeDiff);
 		Tiro* atirar();
+		Tiro* atirar3D();
 		void desenhar2D();
 		void desenhar3D();
 };

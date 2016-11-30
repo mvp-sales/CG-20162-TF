@@ -58,8 +58,43 @@ Ponto Carro::getPosicao() {
 	return _circ->centro;
 }
 
+double Carro::getRaio() {
+	return _circ->raio;
+}
+
 GLuint Carro::getTextura(int i) {
 	return texturas[i];
+}
+
+double* Carro::getProporcaoCanhao() {
+	double* prop = new double[3];
+	prop[0] = 0;
+	prop[1] = 2;
+	if (this->isPlayer())
+		prop[2] = 3.59;
+	else
+		prop[2] = 2.59;
+	return prop;
+}
+
+double Carro::getLengthCanhao() {
+	return 3.2;
+}
+
+double* Carro::getEscala() {
+	double* scale = new double[3];
+	double raio = this->getRaio();
+	if (this->isPlayer()) {
+		scale[0] = raio * 1./5;
+		scale[1] = raio * 1./6;
+		scale[2] = raio * 1./5;
+	}
+	else {
+		scale[0] = raio * 1./4;
+		scale[1] = raio * 1./5;
+		scale[2] = raio * 1./5;
+	}
+	return scale;
 }
 
 double Carro::getVelCarro() {
@@ -285,6 +320,53 @@ Tiro* Carro::atirar() {
 
 }
 
+void Carro::atirar3D() {
+	//Determina a posição do canhão
+	const double anguloCarro = this->getAngCarro();
+	const double anguloCanhaoH = this->getAngCanhaoH();
+	const double anguloCanhaoV = this->getAngCanhaoV();
+	double* scale = this->getEscala();
+	double* canhaoProp = this->getProporcaoCanhao();
+	const double transfMatrixCarro[][4] = {
+											{cos(anguloCarro * DEG2RAD), -sin(anguloCarro * DEG2RAD), 0, _circ->centro.x},
+											{sin(anguloCarro * DEG2RAD), cos(anguloCarro * DEG2RAD), 0, _circ->centro.y},
+											{0.0, 0.0, 1.0, 0.0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	const double canhaoOrigemRelCarro[] = {canhaoProp[0] * scale[0], canhaoProp[1] * scale[1], canhaoProp[2] * scale[2], 1};
+	double origemCanhaoGlobal[4];
+	int i,j;
+	for (i = 0; i < 4; i++) {
+		origemCanhaoGlobal[i] = 0.0;
+		for (j = 0; j < 4; j++) {
+			origemCanhaoGlobal[i] += transfMatrixCarro[i][j]*canhaoOrigemRelCarro[j];
+		}
+	}
+
+	//Determina a posição da saída do canhão
+	double angTotal = anguloCarro + anguloCanhaoH;
+	const double transfMatrix[][3] = {
+										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]},
+										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]},
+										{0.0, 0.0, 1.0}
+									};
+	const double saidaCanhaoRelacaoCanhao[3] = {0.0, CANHAO_HEIGHT * 2 * _circ->raio, 1.0};
+	double saidaCanhaoGlobal[3];
+	for (i = 0; i < 3; i++) {
+		saidaCanhaoGlobal[i] = 0.0;
+		for (j = 0; j < 3; j++) {
+			saidaCanhaoGlobal[i] += transfMatrix[i][j]*saidaCanhaoRelacaoCanhao[j];
+		}
+	}
+
+	Ponto p;
+	p.x = saidaCanhaoGlobal[0];
+	p.y = saidaCanhaoGlobal[1];
+
+	return new Tiro(p, CANHAO_WIDTH * _circ->raio, _velTiro, angTotal + 90);
+
+}
+
 void Carro::desenhaAcopl2D(double width, double height, double proportion, int top, double angulo) {
 	if (!top)
 		top = -1;
@@ -381,15 +463,14 @@ void Carro::desenhar3D() {
 	//O carro assume que o raio base é de 1
 	glPushMatrix();
 		//Escala ao círculo
-		if (this->isPlayer())
-			glScalef(_circ->raio / 5, _circ->raio / 6, _circ->raio / 5);
-		else
-			glScalef(_circ->raio / 4, _circ->raio / 5, _circ->raio / 5);
+		double* scale = this->getEscala();
+		glScalef(scale[0], scale[1], scale[2]);
+		delete scale;
 
 		//Rotaciona e posiciona o carro
 		glRotatef(90, 1, 0, 0);
 		glRotatef(180, 0, 1, 0);
-		glRotatef(_angCarro, 0, 1, 0);
+		glRotatef(this->getAngCarro(), 0, 1, 0);
 
 		//Desenha a base
 		glColor3f(corChassis[0], corChassis[1], corChassis[2]);
@@ -447,20 +528,12 @@ void Carro::desenhar3D() {
 
 		//Desenha o canhão
 		glPushMatrix();
-			if (this->isPlayer()) {
-				adjustX = 0;
-				adjustY = 2;
-				adjustZ = 3.59;
-			}
-			else {
-				adjustX = 0;
-				adjustY = 2;
-				adjustZ = 2.59;
-			}
-			glTranslatef(adjustX, adjustY, adjustZ);
+			double* prop = this->getProporcaoCanhao();
+			glTranslatef(prop[0], prop[1], prop[2]);
 			glRotatef(this->getAngCanhaoH(), 0, 1, 0);
 			glRotatef(this->getAngCanhaoV(), 1, 0, 0);
 			this->desenharCanhao();
+			delete prop;
 		glPopMatrix();
 
 	glPopMatrix();
