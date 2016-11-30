@@ -103,6 +103,23 @@ void Carro::desenharBodyPart() {
 	glDisable(GL_TEXTURE_2D);
 }
 
+void Carro::desenharCanhao() {
+	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionCanhao);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorACanhao);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matColorDCanhao);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecularCanhao);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininessCanhao);
+
+	glEnable(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, this->getTextura(TEX_CHASSI));
+	cannon->draw();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
 void Carro::desenharChassi() {
 	glMaterialfv(GL_FRONT, GL_EMISSION, matEmissionChassis);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, matColorAChassis);
@@ -182,13 +199,23 @@ void Carro::virarRoda(double ang) {
 	}
 }
 
-void Carro::virarCanhao(double ang) {
+void Carro::virarCanhaoH(double ang) {
 	_angCanhaoH += ang;
 	if (_angCanhaoH < -LIMITE_ANGULO) {
 		_angCanhaoH = -LIMITE_ANGULO;
 	}
 	else if (_angCanhaoH > LIMITE_ANGULO) {
 		_angCanhaoH = LIMITE_ANGULO;
+	}
+}
+
+void Carro::virarCanhaoV(double ang) {
+	_angCanhaoV += ang;
+	if (_angCanhaoV < -LIMITE_ANGULO) {
+		_angCanhaoV = -LIMITE_ANGULO;
+	}
+	else if (_angCanhaoV > 0) {
+		_angCanhaoV = 0;
 	}
 }
 
@@ -217,7 +244,7 @@ void Carro::moverRanhuras(int direction, GLdouble timeDiff) {
 Tiro* Carro::atirar() {
 	//Determina a posição do canhão
 	const double anguloCarro = this->getAngCarro();
-	const double anguloCanhao = this->getAngCanhaoH();
+	const double anguloCanhaoH = this->getAngCanhaoH();
 	const double transfMatrixCarro[][3] = {
 											{cos(anguloCarro * DEG2RAD), -sin(anguloCarro * DEG2RAD), _circ->centro.x},
 											{sin(anguloCarro * DEG2RAD), cos(anguloCarro * DEG2RAD), _circ->centro.y},
@@ -235,7 +262,7 @@ Tiro* Carro::atirar() {
 
 
 	//Determina a posição da saída do canhão
-	double angTotal = anguloCarro + anguloCanhao;
+	double angTotal = anguloCarro + anguloCanhaoH;
 	const double transfMatrix[][3] = {
 										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]},
 										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]},
@@ -420,13 +447,20 @@ void Carro::desenhar3D() {
 
 		//Desenha o canhão
 		glPushMatrix();
-			//glTranslatef(0, BASE_HEIGHT/2, BASE_LENGTH / 2);
-			//Rotação horizontal
-			//glRotatef(this->getAngCanhaoH(), 0, 0, 1);
-			//Rotação vertical
-			//glRotatef(this->getAngCanhaoV(), 1, 0, 0);
-			//glColor3f(corCanhao[0], corCanhao[1], corCanhao[2]);
-			//DrawCylinder(CANHAO_WIDTH / 2.0, CANHAO_HEIGHT);
+			if (this->isPlayer()) {
+				adjustX = 0;
+				adjustY = 2;
+				adjustZ = 3.59;
+			}
+			else {
+				adjustX = 0;
+				adjustY = 2;
+				adjustZ = 2.59;
+			}
+			glTranslatef(adjustX, adjustY, adjustZ);
+			glRotatef(this->getAngCanhaoH(), 0, 1, 0);
+			glRotatef(this->getAngCanhaoV(), 1, 0, 0);
+			this->desenharCanhao();
 		glPopMatrix();
 
 	glPopMatrix();
@@ -530,6 +564,9 @@ Ponto CarroInimigo::andar(GLdouble timeDiff) {
 Circulo Tiro::getCirculo() {
 	return *_circ;
 }
+Esfera* Tiro::getEsfera() {
+	return _esfera;
+}
 Ponto Tiro::getPosicao() {
 	return _circ->centro;
 }
@@ -557,9 +594,14 @@ bool Tiro::colisaoCarro(Carro* carro) {
 	return (carro->isPlayer() != this->isPlayerShot()) && colisaoCirc(carro->getCirculo(), this->getCirculo());
 }
 void Tiro::updateTiro(double time) {
-	_circ->centro.x += _velTiro * time * cos(_ang * DEG2RAD);
-	_circ->centro.y += _velTiro * time * sin(_ang * DEG2RAD);
+	_circ->centro.x += _velTiro * time * cos(_angH * DEG2RAD);
+	_circ->centro.y += _velTiro * time * sin(_angH * DEG2RAD);
+	//_circ->centro.z += _velTiro * time * -sin(_angV * DEG2RAD);
 }
 void Tiro::desenhar() {
 	desenhaCirculo(_circ->raio, _circ->fill.r, _circ->fill.g, _circ->fill.b);
 };
+
+void Tiro::desenhar3D() {
+	DrawSphere(_esfera, 0);
+}

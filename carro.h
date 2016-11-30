@@ -38,16 +38,18 @@ class Tiro {
 	private:
 		Circulo* _circ;
 		Esfera* _esfera;
-		float _ang;
+		float _angH;
+		float _angV;
 		float _velTiro;
 		bool _isPlayerShot;
 	public:
-		Tiro(Ponto p, double raio, double velTiro, double ang) {
+		Tiro(Ponto p, double raio, double velTiro, double angH) {
 			_circ = (Circulo*) malloc(sizeof(Circulo));
 			_circ->centro = p;
 			_circ->raio = raio;
 			_velTiro = velTiro;
-			_ang = ang;
+			_angH = angH;
+			//_angV = angV;
 			_esfera = CreateSphere(raio, 16);
 		};
 		~Tiro() {
@@ -61,7 +63,7 @@ class Tiro {
 		bool colisaoCarro(Carro* carro);
 		void updateTiro(double time);
 		void desenhar();
-		//void desenhar3D();
+		void desenhar3D();
 };
 
 class Carro {
@@ -127,6 +129,7 @@ class Carro {
 		GLuint getTextura(int i);
 		bool colisaoCarro(Carro* self, std::list<CarroInimigo*>& carros);
 		void desenharBodyPart();
+		void desenharCanhao();
 		void desenharChassi();
 		void desenharEngine();
 		void desenharInterior();
@@ -139,7 +142,8 @@ class Carro {
 		void setVelCarro(double vcarro);
 		void girarRodas(int direction, GLdouble timeDiff);
 		void virarRoda(double ang);
-		void virarCanhao(double ang);
+		void virarCanhaoH(double ang);
+		void virarCanhaoV(double ang);
 		void virarCarro(double taxa, GLdouble timeDiff);
 		void moverRanhuras(int direction, GLdouble timeDiff);
 		Tiro* atirar();
@@ -202,6 +206,8 @@ class CarroJogador : public Carro {
 			frontwheel->loadFile("Modelos/InterceptorFiles/InterceptorFrontWheel.obj");
 			backwheel = new Obj();
 			backwheel->loadFile("Modelos/InterceptorFiles/InterceptorBackWheel.obj");
+			cannon = new Obj();
+			cannon->loadFile("Modelos/Canhao/Cannon.obj");
 		}
 		Tiro* atirar();
 		void andar(int direction, GLdouble timeDiff);
@@ -271,6 +277,8 @@ class CarroInimigo : public Carro {
 			frontwheel->loadFile("Modelos/BuggyParts/BuggyFrontWheel.obj");
 			backwheel = new Obj();
 			backwheel->loadFile("Modelos/BuggyParts/BuggyBackWheel.obj");
+			cannon = new Obj();
+			cannon->loadFile("Modelos/Canhao/Cannon.obj");
 		}
 		void reverterMovimento() {
 			_reverseTime = 0;

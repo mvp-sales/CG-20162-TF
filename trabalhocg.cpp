@@ -54,7 +54,7 @@ void adjustCamera() {
     sprintf(text, "Cockpit Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
 
-    double ex = jogador->getPosicao().x - 1 * jogador->getCirculo().raio / 5;
+    double ex = jogador->getPosicao().x ;//- 1.3 * jogador->getCirculo().raio / 5;
     double ey = jogador->getPosicao().y;
     double ez = jogador->getAltura();
 
@@ -71,13 +71,12 @@ void adjustCamera() {
 
     sprintf(text, "Cannon Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-    //CarroInimigo* ci = inimigos.front();
     double px = jogador->getPosicao().x;//ci->getPosicao().x;
-    double py = jogador->getPosicao().y;//ci->getPosicao().y
+    double py = jogador->getPosicao().y;//ci->getPosicao().y;
     double pz = 300;//jogador->getAltura();
 
-    double ex = px;//px + 300 * cos(jogador->getAngCarro() * DEG2RAD);
-    double ey = py;//py + 300 * sin(jogador->getAngCarro() * DEG2RAD);
+    double ex = px; //+ 100 * cos(jogador->getAngCarro() * DEG2RAD);
+    double ey = py; //- 100 * sin(jogador->getAngCarro() * DEG2RAD);
     camera->lookAt(ex, ey, pz,
          px, py, 0,
          0, 1, 0);
@@ -220,8 +219,8 @@ void displayGame3D() {
 	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
 		Tiro* t = *it;
 		glPushMatrix();
-		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
-		t->desenhar();
+		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, t->getCirculo().centro.z);
+		t->desenhar3D();
 		glPopMatrix();
 	}
 
@@ -474,9 +473,13 @@ void idle(void) {
 
 void mouseDrag(int x, int y) {
 	static int lastMouseX = 0;
-	if (jogador != NULL && gameStart && !gameOver)
-		jogador->virarCanhao( 2 * ((x < lastMouseX) - (lastMouseX < x)) );
+  static int lastMouseY = 0;
+	if (jogador != NULL && gameStart && !gameOver) {
+		jogador->virarCanhaoH( 0.5 * ((x < lastMouseX) - (lastMouseX < x)) );
+    jogador->virarCanhaoV( 0.5 * ((lastMouseY < y) - (y < lastMouseY)) );
+  }
 	lastMouseX = x;
+  lastMouseY = y;
 }
 
 void mousePress(int button, int state, int x, int y) {
