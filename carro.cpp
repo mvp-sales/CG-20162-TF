@@ -758,7 +758,7 @@ Ponto CarroInimigo::andar(GLdouble timeDiff) {
 Circulo Tiro::getCirculo() {
 	return *_circ;
 }
-Esfera* Tiro::getEsfera() {
+GLUquadric* Tiro::getEsfera() {
 	return _esfera;
 }
 Ponto Tiro::getPosicao() {
@@ -788,14 +788,14 @@ bool Tiro::colisaoCarro(Carro* carro) {
 	return (carro->isPlayer() != this->isPlayerShot()) && colisaoCirc(carro->getCirculo(), this->getCirculo());
 }
 void Tiro::updateTiro(double time) {
-	//_circ->centro.x += _velTiro * time * cos(_angH * DEG2RAD);
-	//_circ->centro.y += _velTiro * time * sin(_angH * DEG2RAD);
-	//_circ->centro.z += _velTiro * time * sin(_angV * DEG2RAD);
+	_circ->centro.x += _velTiro * time * cos(_angV * DEG2RAD) * cos(_angH * DEG2RAD);
+	_circ->centro.y += _velTiro * time * cos(_angV * DEG2RAD) * sin(_angH * DEG2RAD);
+	_circ->centro.z += _velTiro * time * sin(_angV * DEG2RAD);
 }
 void Tiro::desenhar() {
 	desenhaCirculo(_circ->raio, _circ->fill.r, _circ->fill.g, _circ->fill.b);
 };
 
 void Tiro::desenhar3D() {
-	DrawSphere(_esfera, 0);
+	gluSphere(this->getEsfera(), this->getCirculo().raio, 30, 30);
 }

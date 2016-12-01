@@ -39,7 +39,7 @@ class CarroInimigo;
 class Tiro {
 	private:
 		Circulo* _circ;
-		Esfera* _esfera;
+		GLUquadric* _esfera;
 		float _angH;
 		float _angV;
 		float _velTiro;
@@ -52,13 +52,13 @@ class Tiro {
 			_velTiro = velTiro;
 			_angH = angH;
 			_angV = angV;
-			_esfera = CreateSphere(raio, 16);
+			_esfera = gluNewQuadric();
 		};
 		~Tiro() {
 			delete _circ;
 		};
 		Circulo getCirculo();
-		Esfera* getEsfera();
+		GLUquadric* getEsfera();
 		Ponto getPosicao();
 		bool isPlayerShot();
 		void setPlayerShot(bool playerShot);

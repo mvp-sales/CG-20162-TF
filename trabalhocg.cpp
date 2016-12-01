@@ -11,8 +11,9 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(2, 60, 1, 550);
+Camera* camera = new Camera(2, 60, 1, 750);
 GLUquadric* o = gluNewQuadric();
+GLUquadric* obj2d = gluNewQuadric();
 
 //Dimensões da janela
 double janelaLarg;
@@ -89,8 +90,8 @@ void adjustCamera() {
     double py = jogador->getPosicao().y;
     double pz = jogador->getAltura();
 
-    double ex = px + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-    double ey = py - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+    double ex = px; //+ (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+    double ey = py - 60;
     double ez = pz * 4;
 
     camera->lookAt(ex, ey, ez,
@@ -133,16 +134,16 @@ void displayGame2D() {
 	//Desenha a pista externa
 	glPushMatrix();
 	glTranslatef(pistaExterna->centro.x, pistaExterna->centro.y, 0);
-	desenhaCirculoLinha(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
-	//desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+  glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
+  gluQuadricDrawStyle(obj2d, GLU_SILHOUETTE);
+  gluDisk(obj2d, 0, pistaExterna->raio, 20, 1);
 	glPopMatrix();
 
 	//Desenha a pista interna
 	glPushMatrix();
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
 	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-	desenhaCirculoLinha(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
+  gluDisk(obj2d, 0, pistaInterna->raio, 20, 1);
 	glPopMatrix();
 
 	//Desenha a pista
