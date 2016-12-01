@@ -1,5 +1,12 @@
 #include "carro.h"
 
+void deleteMat(double** ptr, int size) {
+	for (int i = 0; i< size; i++) {
+		delete [] ptr[i];
+	}
+	delete [] ptr;
+}
+
 //Setters
 void Carro::setPosicao(Ponto pos) {
 	_circ->centro = pos;
@@ -79,6 +86,10 @@ double* Carro::getProporcaoCanhao() {
 
 double Carro::getLengthCanhao() {
 	return 3.2;
+}
+
+double Carro::getVerticalAdjCanhao() {
+	return 0.5;
 }
 
 double* Carro::getEscala() {
@@ -276,94 +287,204 @@ void Carro::moverRanhuras(int direction, GLdouble timeDiff) {
 		_posRanhuras = DIST_RANHURAS;
 }
 
-Tiro* Carro::atirar() {
-	//Determina a posição do canhão
-	const double anguloCarro = this->getAngCarro();
-	const double anguloCanhaoH = this->getAngCanhaoH();
-	const double transfMatrixCarro[][3] = {
-											{cos(anguloCarro * DEG2RAD), -sin(anguloCarro * DEG2RAD), _circ->centro.x},
-											{sin(anguloCarro * DEG2RAD), cos(anguloCarro * DEG2RAD), _circ->centro.y},
-											{0.0, 0.0, 1.0}
-										};
-	const double origemCanhaoRelacaoCarro[3] = {0.0, BASE_HEIGHT * _circ->raio, 1.0};
-	double origemCanhaoGlobal[3];
-	int i,j;
-	for (i = 0; i < 3; i++) {
-		origemCanhaoGlobal[i] = 0.0;
-		for (j = 0; j < 3; j++) {
-			origemCanhaoGlobal[i] += transfMatrixCarro[i][j]*origemCanhaoRelacaoCarro[j];
-		}
-	}
-
-
-	//Determina a posição da saída do canhão
-	double angTotal = anguloCarro + anguloCanhaoH;
-	const double transfMatrix[][3] = {
-										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]},
-										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]},
-										{0.0, 0.0, 1.0}
-									};
-	const double saidaCanhaoRelacaoCanhao[3] = {0.0, CANHAO_HEIGHT * 2 * _circ->raio, 1.0};
-	double saidaCanhaoGlobal[3];
-	for (i = 0; i < 3; i++) {
-		saidaCanhaoGlobal[i] = 0.0;
-		for (j = 0; j < 3; j++) {
-			saidaCanhaoGlobal[i] += transfMatrix[i][j]*saidaCanhaoRelacaoCanhao[j];
-		}
-	}
-
-	Ponto p;
-	p.x = saidaCanhaoGlobal[0];
-	p.y = saidaCanhaoGlobal[1];
-
-	return new Tiro(p, CANHAO_WIDTH * _circ->raio, _velTiro, angTotal + 90);
-
-}
-
-void Carro::atirar3D() {
+double** Carro::calcularPontosCanhao() {
 	//Determina a posição do canhão
 	const double anguloCarro = this->getAngCarro();
 	const double anguloCanhaoH = this->getAngCanhaoH();
 	const double anguloCanhaoV = this->getAngCanhaoV();
 	double* scale = this->getEscala();
 	double* canhaoProp = this->getProporcaoCanhao();
-	const double transfMatrixCarro[][4] = {
-											{cos(anguloCarro * DEG2RAD), -sin(anguloCarro * DEG2RAD), 0, _circ->centro.x},
-											{sin(anguloCarro * DEG2RAD), cos(anguloCarro * DEG2RAD), 0, _circ->centro.y},
-											{0.0, 0.0, 1.0, 0.0},
+	double transfMatrixRot1[4][4] = {
+											{1.0, 0.0, 0.0, 0.0},
+											{0, cos(90 * DEG2RAD), -sin(90 * DEG2RAD), 0},
+											{0, sin(90 * DEG2RAD), cos(90 * DEG2RAD), 0},
 											{0.0, 0.0, 0.0, 1.0}
 										};
-	const double canhaoOrigemRelCarro[] = {canhaoProp[0] * scale[0], canhaoProp[1] * scale[1], canhaoProp[2] * scale[2], 1};
-	double origemCanhaoGlobal[4];
-	int i,j;
+	double transfMatrixRot2[4][4] = {
+											{cos(180 * DEG2RAD), 0.0, sin(180 * DEG2RAD), 0},
+											{0.0, 1.0, 0.0, 0.0},
+											{-sin(180 * DEG2RAD), 0.0, cos(180 * DEG2RAD), 0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	double transfMatrixCarroRot[4][4] = {
+											{cos(anguloCarro * DEG2RAD), 0.0, sin(anguloCarro * DEG2RAD), 0},
+											{0.0, 1.0, 0.0, 0.0},
+											{-sin(anguloCarro * DEG2RAD), 0.0, cos(anguloCarro * DEG2RAD), 0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	double transfEscala[4][4] = {
+		{scale[0], 0, 0, 0},
+		{0, scale[1], 0, 0},
+		{0, 0, scale[2], 0},
+		{0, 0, 0, 1}
+	};
+	double transfTranslacao[4][4] = {
+		{1, 0, 0, _circ->centro.x},
+		{0, 1, 0, _circ->centro.y},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}
+	};
+	double canhaoOrigemRelCarro[4] = {canhaoProp[0], canhaoProp[1], canhaoProp[2], 1};
+
+	//Ordem de operações: TSR1R2R3
+
+	int i,j,k;
+	double** m1 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m1[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m1[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m1[i][j] += transfMatrixRot1[i][k] * transfMatrixRot2[k][j];
+			}
+		}
+	}
+
+	double** m2 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m2[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m2[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m2[i][j] += m1[i][k] * transfMatrixCarroRot[k][j];
+			}
+		}
+	}
+
+	double** m3 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m3[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m3[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m3[i][j] += transfEscala[i][k] * m2[k][j];
+			}
+		}
+	}
+
+	double** m4 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m4[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m4[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m4[i][j] += transfTranslacao[i][k] * m3[k][j];
+			}
+		}
+	}
+
+	double* origemCanhaoGlobal = new double[4];
 	for (i = 0; i < 4; i++) {
 		origemCanhaoGlobal[i] = 0.0;
 		for (j = 0; j < 4; j++) {
-			origemCanhaoGlobal[i] += transfMatrixCarro[i][j]*canhaoOrigemRelCarro[j];
+			origemCanhaoGlobal[i] += m4[i][j] * canhaoOrigemRelCarro[j];
 		}
 	}
+
+	deleteMat(m1, 4);
+	deleteMat(m2, 4);
+	deleteMat(m4, 4);
 
 	//Determina a posição da saída do canhão
-	double angTotal = anguloCarro + anguloCanhaoH;
-	const double transfMatrix[][3] = {
-										{cos(angTotal * DEG2RAD), -sin(angTotal * DEG2RAD), origemCanhaoGlobal[0]},
-										{sin(angTotal * DEG2RAD), cos(angTotal * DEG2RAD), origemCanhaoGlobal[1]},
-										{0.0, 0.0, 1.0}
+	double anguloTotal = anguloCarro + anguloCanhaoH;
+	double transfMatrixRot4[][4] = {
+										{cos(anguloCanhaoH * DEG2RAD), 0.0, sin(anguloCanhaoH * DEG2RAD), 0.0},
+										{0.0, 1.0, 0.0, 0.0},
+										{-sin(anguloCanhaoH * DEG2RAD), 0.0, cos(anguloCanhaoH * DEG2RAD), 0.0},
+										{0.0, 0.0, 0.0, 1.0}
 									};
-	const double saidaCanhaoRelacaoCanhao[3] = {0.0, CANHAO_HEIGHT * 2 * _circ->raio, 1.0};
-	double saidaCanhaoGlobal[3];
-	for (i = 0; i < 3; i++) {
-		saidaCanhaoGlobal[i] = 0.0;
-		for (j = 0; j < 3; j++) {
-			saidaCanhaoGlobal[i] += transfMatrix[i][j]*saidaCanhaoRelacaoCanhao[j];
+	double transfMatrixRot5[][4] = {
+										{1.0, 0.0, 0.0, 0},
+										{0, cos(anguloCanhaoV * DEG2RAD), -sin(anguloCanhaoV * DEG2RAD), 0},
+										{0, sin(anguloCanhaoV * DEG2RAD), cos(anguloCanhaoV * DEG2RAD), 0},
+										{0.0, 0.0, 0.0, 1.0}
+									};
+	double transfTranslacaoFinal[][4] = {
+										{1.0, 0.0, 0.0, origemCanhaoGlobal[0]},
+										{0.0, 1.0, 0.0, origemCanhaoGlobal[1]},
+										{0.0, 0.0, 1.0, origemCanhaoGlobal[2]},
+										{0.0, 0.0, 0.0, 1.0}
+	};
+
+	double saidaCanhaoRelacaoCanhao[] = {0.0, this->getVerticalAdjCanhao(), this->getLengthCanhao(), 1.0};
+
+	//Ordem das matrizes: TM3R4R5
+
+	double** m5 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m5[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m5[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m5[i][j] += transfMatrixRot4[i][k] * transfMatrixRot5[k][j];
+			}
 		}
 	}
 
-	Ponto p;
-	p.x = saidaCanhaoGlobal[0];
-	p.y = saidaCanhaoGlobal[1];
+	double** m6 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m6[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m6[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m6[i][j] += m3[i][k] * m5[k][j];
+			}
+		}
+	}
 
-	return new Tiro(p, CANHAO_WIDTH * _circ->raio, _velTiro, angTotal + 90);
+	double** m7 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m7[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m7[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m7[i][j] += transfTranslacaoFinal[i][k] * m6[k][j];
+			}
+		}
+	}
+
+	double* saidaCanhaoGlobal = new double[4];
+	for (i = 0; i < 4; i++) {
+		saidaCanhaoGlobal[i] = 0.0;
+		for (j = 0; j < 4; j++) {
+			saidaCanhaoGlobal[i] += m7[i][j] * saidaCanhaoRelacaoCanhao[j];
+		}
+	}
+
+	deleteMat(m3, 4);
+	deleteMat(m5, 4);
+	deleteMat(m6, 4);
+	deleteMat(m7, 4);
+
+	double** ptr = new double*[2];
+	ptr[0] = saidaCanhaoGlobal;
+	ptr[1] = origemCanhaoGlobal;
+
+	delete [] canhaoProp;
+	delete [] scale;
+
+	return ptr;
+}
+
+Tiro* Carro::atirar() {
+
+	const double anguloCarro = this->getAngCarro();
+	const double anguloCanhaoH = this->getAngCanhaoH();
+	const double anguloCanhaoV = this->getAngCanhaoV();
+	double** ptr = this->calcularPontosCanhao();
+	double* scale = this->getEscala();
+
+	Ponto p;
+	p.x = ptr[0][0];
+	p.y = ptr[0][1];
+	p.z = ptr[0][2];
+
+	Tiro* novoTiro = new Tiro(p, CANHAO_WIDTH * scale[0], _velTiro, anguloCarro + anguloCanhaoH + 90, -anguloCanhaoV);
+
+	deleteMat(ptr, 2);
+	delete [] scale;
+
+	return novoTiro;
 
 }
 
@@ -465,7 +586,7 @@ void Carro::desenhar3D() {
 		//Escala ao círculo
 		double* scale = this->getEscala();
 		glScalef(scale[0], scale[1], scale[2]);
-		delete scale;
+		delete [] scale;
 
 		//Rotaciona e posiciona o carro
 		glRotatef(90, 1, 0, 0);
@@ -533,7 +654,7 @@ void Carro::desenhar3D() {
 			glRotatef(this->getAngCanhaoH(), 0, 1, 0);
 			glRotatef(this->getAngCanhaoV(), 1, 0, 0);
 			this->desenharCanhao();
-			delete prop;
+			delete [] prop;
 		glPopMatrix();
 
 	glPopMatrix();
@@ -667,9 +788,9 @@ bool Tiro::colisaoCarro(Carro* carro) {
 	return (carro->isPlayer() != this->isPlayerShot()) && colisaoCirc(carro->getCirculo(), this->getCirculo());
 }
 void Tiro::updateTiro(double time) {
-	_circ->centro.x += _velTiro * time * cos(_angH * DEG2RAD);
-	_circ->centro.y += _velTiro * time * sin(_angH * DEG2RAD);
-	//_circ->centro.z += _velTiro * time * -sin(_angV * DEG2RAD);
+	//_circ->centro.x += _velTiro * time * cos(_angH * DEG2RAD);
+	//_circ->centro.y += _velTiro * time * sin(_angH * DEG2RAD);
+	//_circ->centro.z += _velTiro * time * sin(_angV * DEG2RAD);
 }
 void Tiro::desenhar() {
 	desenhaCirculo(_circ->raio, _circ->fill.r, _circ->fill.g, _circ->fill.b);

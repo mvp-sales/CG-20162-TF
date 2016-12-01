@@ -71,16 +71,13 @@ void adjustCamera() {
 
     sprintf(text, "Cannon Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-    CarroInimigo* ci = inimigos.front();
-    double px = ci->getPosicao().x;//jogador->getPosicao().x;
-    double py = ci->getPosicao().y;//jogador->getPosicao().y
-    double pz = 300;//jogador->getAltura();
+    double** cannonPoints = jogador->calcularPontosCanhao();
+    double* saida = cannonPoints[0];
+    double* origem = cannonPoints[1];
 
-    double ex = px; //+ 100 * cos(jogador->getAngCarro() * DEG2RAD);
-    double ey = py; //- 100 * sin(jogador->getAngCarro() * DEG2RAD);
-    camera->lookAt(ex, ey, pz,
-         px, py, 0,
-         0, 1, 0);
+    camera->lookAt(origem[0], origem[1], origem[2] + 0.5 * jogador->getAltura(),
+         saida[0], saida[1], saida[2],
+         0, 0, 1);
 
   }
   else if (camera->getCurrentCamera() == 3) {
@@ -157,7 +154,7 @@ void displayGame2D() {
 	//Desenha o jogador
 	if (jogador != NULL) {
 		glPushMatrix();
-		glTranslatef(jogador->getCirculo().centro.x, jogador->getCirculo().centro.y, 0);
+		glTranslatef(jogador->getPosicao().x, jogador->getPosicao().y, 0);
 		jogador->desenhar2D();
 		glPopMatrix();
 	}
@@ -166,7 +163,7 @@ void displayGame2D() {
 	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
 		CarroInimigo* t = *it;
 		glPushMatrix();
-		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
+		glTranslatef(t->getPosicao().x, t->getPosicao().y, 0);
 		t->desenhar2D();
 		glPopMatrix();
 	}
@@ -193,7 +190,7 @@ void displayGame3D() {
 	glPushMatrix();
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
 	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-  gluCylinder(o, pistaInterna->raio, pistaInterna->raio, jogador->getAltura() * 4, 30, 2);
+  gluCylinder(o, pistaInterna->raio, pistaInterna->raio, jogador->getAltura() * 2, 30, 2);
   //DrawCylinder(pistaInterna->raio, 20);
 	//DrawSphere(internal, 1);
 	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
@@ -211,7 +208,7 @@ void displayGame3D() {
 	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
 		Tiro* t = *it;
 		glPushMatrix();
-		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, t->getCirculo().centro.z);
+		glTranslatef(t->getPosicao().x, t->getPosicao().y, t->getPosicao().z);
 		t->desenhar3D();
 		glPopMatrix();
 	}
@@ -219,7 +216,7 @@ void displayGame3D() {
 	//Desenha o jogador
 	if (jogador != NULL) {
 		glPushMatrix();
-		glTranslatef(jogador->getCirculo().centro.x, jogador->getCirculo().centro.y, 0);
+		glTranslatef(jogador->getPosicao().x, jogador->getPosicao().y, 0);
 		jogador->desenhar3D();
 		glPopMatrix();
 	}
@@ -228,7 +225,7 @@ void displayGame3D() {
 	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
 		CarroInimigo* t = *it;
 		glPushMatrix();
-		glTranslatef(t->getCirculo().centro.x, t->getCirculo().centro.y, 0);
+		glTranslatef(t->getPosicao().x, t->getPosicao().y, 0);
 		t->desenhar3D();
 		glPopMatrix();
 	}
@@ -265,26 +262,14 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glPushMatrix();
-
-  adjustCamera();
-  char text[300];
-
-  GLfloat light_position[] = {0, 1, 1, 1};
-  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	glPushMatrix();
-	displayGame3D();
-	glPopMatrix();
-
-	glPopMatrix();
-
-	//Mostra o mapa na tela
+  //Mostra o mapa na tela
 	if (mapActive) {
 		glPushMatrix();
 		displayMap();
 		glPopMatrix();
 	}
+
+  char text[300];
 
 	//Desenha o tempo na tela
 	sprintf(text, "Tempo: %02d:%02d:%02d", (int) timerHour, (int) timerMin, (int) timerSeg);
@@ -298,8 +283,22 @@ void display() {
 		printText2D(0.44, 0.5, text, 1, 1, 1);
 	}
 
-    //Desenha na tela
-    glutSwapBuffers();
+	glPushMatrix();
+
+  adjustCamera();
+
+
+  GLfloat light_position[] = {0, 0, (GLfloat) jogador->getAltura() * 3, 1};
+  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+	glPushMatrix();
+	displayGame3D();
+	glPopMatrix();
+
+	glPopMatrix();
+
+  //Desenha na tela
+  glutSwapBuffers();
 }
 
 void keyRelease(unsigned char key, int x, int y) {
@@ -400,7 +399,7 @@ void gameRun(GLdouble currentTime, GLdouble timeDifference) {
 	//Movimento e tiro automático dos inimigos
 	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
 		CarroInimigo* ci = *it;
-		ci->atirar(tiros, timeDifference);
+		//ci->atirar(tiros, timeDifference);
 		Ponto antigo = ci->getPosicao();
 		ci->andar(timeDifference);
 		if (jogador != NULL && colisaoCirc(jogador->getCirculo(), ci->getCirculo())) {

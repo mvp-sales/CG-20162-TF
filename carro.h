@@ -31,6 +31,8 @@ typedef struct {
 	double inimigoVelTiro;
 } EnemyAttr;
 
+void deleteMat(double** ptr, int size);
+
 class Carro;
 class CarroInimigo;
 
@@ -43,13 +45,13 @@ class Tiro {
 		float _velTiro;
 		bool _isPlayerShot;
 	public:
-		Tiro(Ponto p, double raio, double velTiro, double angH) {
+		Tiro(Ponto p, double raio, double velTiro, double angH, double angV) {
 			_circ = (Circulo*) malloc(sizeof(Circulo));
 			_circ->centro = p;
 			_circ->raio = raio;
 			_velTiro = velTiro;
 			_angH = angH;
-			//_angV = angV;
+			_angV = angV;
 			_esfera = CreateSphere(raio, 16);
 		};
 		~Tiro() {
@@ -125,7 +127,9 @@ class Carro {
 		Circulo getCirculo();
 		double* getEscala();
 		Ponto getPosicao();
+		double getLengthCanhao();
 		double* getProporcaoCanhao();
+		double getVerticalAdjCanhao();
 		double getRaio();
 		double getVelCarro();
 		double getTurnRate();
@@ -149,8 +153,8 @@ class Carro {
 		void virarCanhaoV(double ang);
 		void virarCarro(double taxa, GLdouble timeDiff);
 		void moverRanhuras(int direction, GLdouble timeDiff);
+		double** calcularPontosCanhao();
 		Tiro* atirar();
-		Tiro* atirar3D();
 		void desenhar2D();
 		void desenhar3D();
 };
