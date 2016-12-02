@@ -594,7 +594,7 @@ void Carro::desenhar3D() {
 		glRotatef(this->getAngCarro(), 0, 1, 0);
 
 		//Desenha a base
-		glColor3f(corChassis[0], corChassis[1], corChassis[2]);
+		glColor3f(1,1,1);//corChassis[0], corChassis[1], corChassis[2]);
 		this->desenharBodyPart();
 		this->desenharInterior();
 		this->desenharEngine();

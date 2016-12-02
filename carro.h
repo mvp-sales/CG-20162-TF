@@ -173,7 +173,7 @@ class CarroJogador : public Carro {
 			corCanhao[2] = 0.1;
 			for (int i = 0; i < 4; i++) {
 				if (i < 3) {
-					matColorAChassis[i] = 0.2;
+					matColorAChassis[i] = 1;
 					matColorDChassis[i] = 1;
 					matColorARodas[i] = 0.2;
 					matColorDRodas[i] = 0.2;
@@ -181,7 +181,7 @@ class CarroJogador : public Carro {
 					matColorDCanhao[i] = 0.2;
 					matEmissionCanhao[i] = 0.3;
 					matEmissionRodas[i] = 0.3;
-					matEmissionChassis[i] = 0.3;
+					matEmissionChassis[i] = 1;
 				}
 				else {
 					matColorAChassis[i] = 1;

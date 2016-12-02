@@ -11,7 +11,7 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(2, 60, 1, 750);
+Camera* camera = new Camera(2, 45, 1, 750);
 GLUquadric* o = gluNewQuadric();
 GLUquadric* obj2d = gluNewQuadric();
 
@@ -29,9 +29,15 @@ bool gameOver = false;
 int currentCheckpoint = 0;
 bool mapActive = false;
 bool lightEnabled = true;
+bool nightMode = false;
 
 //Controla o movimento no teclado
 int keyState[256];
+
+//Controla o mouse
+int lastMouseX = 0;
+int lastMouseY = 0;
+bool buttonPressed = false;
 
 // Text variable
 static char str[2000];
@@ -86,13 +92,23 @@ void adjustCamera() {
     sprintf(text, "Dynamic Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
 
+    const float distCamera = 120;
+    float horDistCamera = distCamera * cos(camera->getAngleVertical() * DEG2RAD);
+    float vertDistCamera = distCamera * sin (camera->getAngleVertical() * DEG2RAD);
+
+    float theta = jogador->getAngCarro() + camera->getAngleHorizontal();
+
+    float xOffsetCamera = horDistCamera * sin(theta * DEG2RAD);
+    float yOffsetCamera = horDistCamera * cos(theta * DEG2RAD);
+
     double px = jogador->getPosicao().x;
     double py = jogador->getPosicao().y;
     double pz = jogador->getAltura();
 
-    double ex = px; //+ (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-    double ey = py - 60;
-    double ez = pz * 4;
+    double ex = px - xOffsetCamera;
+    double ey = py - yOffsetCamera;
+    double ez = pz + vertDistCamera;
+
 
     camera->lookAt(ex, ey, ez,
          px, py, pz,
@@ -192,9 +208,6 @@ void displayGame3D() {
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
 	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
   gluCylinder(o, pistaInterna->raio, pistaInterna->raio, jogador->getAltura() * 2, 30, 2);
-  //DrawCylinder(pistaInterna->raio, 20);
-	//DrawSphere(internal, 1);
-	//desenhaCirculo(pistaInterna->raio, pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
 	glPopMatrix();
 
 	//Desenha a pista
@@ -289,7 +302,9 @@ void display() {
   adjustCamera();
 
 
-  GLfloat light_position[] = {0, 0, (GLfloat) jogador->getAltura() * 3, 1};
+  GLfloat light_position[] = {0, 0, 80, 1};
+  GLfloat light_ambient[] = {1, 1, 1, 1};
+  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
 	glPushMatrix();
@@ -318,6 +333,10 @@ void keyPress(unsigned char key, int x, int y) {
 		case 'm':
 		case 'M':
 			mapActive = !mapActive;
+      break;
+    case 'n':
+    case 'N':
+      nightMode = !nightMode;
       break;
     case 'l':
     case 'L':
@@ -400,7 +419,7 @@ void gameRun(GLdouble currentTime, GLdouble timeDifference) {
 	//Movimento e tiro automático dos inimigos
 	for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
 		CarroInimigo* ci = *it;
-		//ci->atirar(tiros, timeDifference);
+		ci->atirar(tiros, timeDifference);
 		Ponto antigo = ci->getPosicao();
 		ci->andar(timeDifference);
 		if (jogador != NULL && colisaoCirc(jogador->getCirculo(), ci->getCirculo())) {
@@ -464,12 +483,18 @@ void idle(void) {
 }
 
 void mouseDrag(int x, int y) {
-	static int lastMouseX = 0;
-  static int lastMouseY = 0;
-	if (jogador != NULL && gameStart && !gameOver) {
-		jogador->virarCanhaoH( 0.5 * ((x < lastMouseX) - (lastMouseX < x)) );
-    jogador->virarCanhaoV( 0.5 * ((lastMouseY < y) - (y < lastMouseY)) );
+  if (!buttonPressed) {
+  	if (jogador != NULL && gameStart && !gameOver && !buttonPressed) {
+  		jogador->virarCanhaoH( (x < lastMouseX) - (lastMouseX < x) );
+      jogador->virarCanhaoV( 0.5 * ((lastMouseY < y) - (y < lastMouseY)) );
+    }
+    else return;
   }
+  else if (camera->getCurrentCamera() == 3) {
+    camera->giroVertical(y - lastMouseY);
+    camera->giroHorizontal(x - lastMouseX);
+  }
+  else return;
 	lastMouseX = x;
   lastMouseY = y;
 }
@@ -480,6 +505,15 @@ void mousePress(int button, int state, int x, int y) {
 		if (jogador != NULL && gameStart && !gameOver)
 			tiros.push_back(jogador->atirar());
 	}
+  else if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+    //salva a posiçao atual
+    lastMouseX = x;
+    lastMouseY = y;
+    buttonPressed = true;
+  }
+  else if (button == GLUT_RIGHT_BUTTON && state == GLUT_UP) {
+    buttonPressed = false;
+  }
 }
 
 void reshape (int w, int h) {
@@ -500,6 +534,8 @@ void init() {
     glShadeModel (GL_SMOOTH);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_LIGHT0);
+
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
     GLuint enTextures[5] = {
               LoadTexture("Texturas/BuggyTexturas/BuggyBodyPart.bmp"),

@@ -12,12 +12,31 @@ double Camera::getAngle() {
 	return camAngle;
 }
 
+int Camera::getAngleVertical() {
+	return this->camAngleYZ;
+}
+
+int Camera::getAngleHorizontal() {
+	return this->camAngleXY;
+}
+
 int Camera::getCurrentCamera() {
 	return cameraVision;
 }
 
 void Camera::setAngle(double angle) {
 	camAngle = angle;
+}
+
+void Camera::giroVertical(int value) {
+	this->camAngleYZ += value;
+	if (this->camAngleYZ > MAX_ANGLE_VERTICAL) this->camAngleYZ = MAX_ANGLE_VERTICAL;
+	else if (this->camAngleYZ < -MAX_ANGLE_VERTICAL) this->camAngleYZ = -MAX_ANGLE_VERTICAL;
+}
+void Camera::giroHorizontal(int value) {
+	this->camAngleXY += value;
+	if (this->camAngleXY > MAX_ANGLE_HORIZONTAL) this->camAngleXY = MAX_ANGLE_HORIZONTAL;
+	else if (this->camAngleXY < -MAX_ANGLE_HORIZONTAL) this->camAngleXY = -MAX_ANGLE_HORIZONTAL;
 }
 
 void Camera::toggleCamera(int cameraVision) {
