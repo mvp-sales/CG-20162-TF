@@ -81,13 +81,26 @@ void adjustCamera() {
     double** cannonPoints = jogador->calcularPontosCanhao();
     double* saida = cannonPoints[0];
     double* origem = cannonPoints[1];
+    double vetor[3] = {saida[0] - origem[0], saida[1] - origem[1], saida[2] - origem[2]};
+    double distancia = 0.25*jogador->getAltura();
+    double alpha = 90 - jogador->getAngCanhaoV();
+    double zOffset = distancia * sin(alpha * DEG2RAD);
+    double horizontalDistance = distancia * cos(alpha * DEG2RAD);
+    double theta = jogador->getAngCarro() + jogador->getAngCanhaoH() + 90;
+    double xOffset = horizontalDistance * sin(theta * DEG2RAD);
+    double yOffset = horizontalDistance * cos(theta * DEG2RAD);
 
-    camera->lookAt(origem[0], origem[1], origem[2] + 0.5 * jogador->getAltura(),
-         saida[0], saida[1], saida[2],
+    camera->lookAt(origem[0] - xOffset, origem[1] + yOffset, origem[2]+ zOffset,
+         saida[0] - xOffset,saida[1] + yOffset,saida[2] + zOffset,
          0, 0, 1);
+
 
   }
   else if (camera->getCurrentCamera() == 3) {
+    double** cannonPoints = jogador->calcularPontosCanhao();
+    double* saida = cannonPoints[0];
+    double* origem = cannonPoints[1];
+    double vetor[3] = {saida[0] - origem[0], saida[1] - origem[1], saida[2] - origem[2]};
     //Câmera atrás do carro, seguindo sua posição
     sprintf(text, "Dynamic Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
@@ -109,10 +122,19 @@ void adjustCamera() {
     double ey = py - yOffsetCamera;
     double ez = pz + vertDistCamera;
 
-
     camera->lookAt(ex, ey, ez,
          px, py, pz,
          0, 0, 1);
+
+         glPushAttrib(GL_ENABLE_BIT);
+         glDisable(GL_LIGHTING);
+         glDisable(GL_TEXTURE_2D);
+         glColor3f(1,0,0);
+         glBegin(GL_LINES);
+           glVertex3f(origem[0],origem[1],origem[2]+jogador->getAltura()*0.3);
+             glVertex3f(saida[0],saida[1],saida[2]+jogador->getAltura()*0.3);
+         glEnd();
+         glPopAttrib();
   }
 }
 
@@ -303,7 +325,7 @@ void display() {
 
 
   GLfloat light_position[] = {0, 0, 80, 1};
-  GLfloat light_ambient[] = {1, 1, 1, 1};
+  GLfloat light_ambient[] = {0.8, 0.6, 0.1, 1};
   glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
