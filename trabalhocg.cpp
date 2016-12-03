@@ -11,7 +11,7 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(2, 45, 1, 750);
+Camera* camera = new Camera(2, 60, 1, 750);
 GLUquadric* o = gluNewQuadric();
 GLUquadric* obj2d = gluNewQuadric();
 
@@ -61,13 +61,13 @@ void adjustCamera() {
     sprintf(text, "Cockpit Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
 
-    double ex = jogador->getPosicao().x ;//- 1.3 * jogador->getCirculo().raio / 5;
+    double ex = jogador->getPosicao().x;
     double ey = jogador->getPosicao().y;
     double ez = jogador->getAltura();
 
     double px = ex - (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
     double py = ey + (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-    double pz = jogador->getAltura();
+    double pz = 0.9 * jogador->getAltura();
 
     camera->lookAt(ex, ey, ez,
          px, py, pz,
@@ -81,26 +81,23 @@ void adjustCamera() {
     double** cannonPoints = jogador->calcularPontosCanhao();
     double* saida = cannonPoints[0];
     double* origem = cannonPoints[1];
+    double* saidaParalela = cannonPoints[2];
     double vetor[3] = {saida[0] - origem[0], saida[1] - origem[1], saida[2] - origem[2]};
-    double distancia = 0.25*jogador->getAltura();
-    double alpha = 90 - jogador->getAngCanhaoV();
+    double distancia = 0.3*jogador->getAltura();
+    double alpha = 90 + jogador->getAngCanhaoV();
     double zOffset = distancia * sin(alpha * DEG2RAD);
     double horizontalDistance = distancia * cos(alpha * DEG2RAD);
-    double theta = jogador->getAngCarro() + jogador->getAngCanhaoH() + 90;
+    double theta = jogador->getAngCarro() + jogador->getAngCanhaoH();
     double xOffset = horizontalDistance * sin(theta * DEG2RAD);
     double yOffset = horizontalDistance * cos(theta * DEG2RAD);
 
-    camera->lookAt(origem[0] - xOffset, origem[1] + yOffset, origem[2]+ zOffset,
-         saida[0] - xOffset,saida[1] + yOffset,saida[2] + zOffset,
+    camera->lookAt(origem[0] + xOffset, origem[1] - yOffset, origem[2]+ zOffset,
+         saidaParalela[0] + xOffset, saidaParalela[1] - yOffset, saidaParalela[2] + zOffset,
          0, 0, 1);
 
-
+    deleteMat(cannonPoints, 3);
   }
   else if (camera->getCurrentCamera() == 3) {
-    double** cannonPoints = jogador->calcularPontosCanhao();
-    double* saida = cannonPoints[0];
-    double* origem = cannonPoints[1];
-    double vetor[3] = {saida[0] - origem[0], saida[1] - origem[1], saida[2] - origem[2]};
     //Câmera atrás do carro, seguindo sua posição
     sprintf(text, "Dynamic Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
@@ -125,16 +122,6 @@ void adjustCamera() {
     camera->lookAt(ex, ey, ez,
          px, py, pz,
          0, 0, 1);
-
-         glPushAttrib(GL_ENABLE_BIT);
-         glDisable(GL_LIGHTING);
-         glDisable(GL_TEXTURE_2D);
-         glColor3f(1,0,0);
-         glBegin(GL_LINES);
-           glVertex3f(origem[0],origem[1],origem[2]+jogador->getAltura()*0.3);
-             glVertex3f(saida[0],saida[1],saida[2]+jogador->getAltura()*0.3);
-         glEnd();
-         glPopAttrib();
   }
 }
 
@@ -154,7 +141,7 @@ void printText2D(GLfloat x, GLfloat y, char* text, GLdouble r, GLdouble g, GLdou
     //Adjust the color
     glColor3f(r, g, b);
     //Define the position to start printing
-    glRasterPos2f(x, y);
+    glRasterPos3f(x, y, 1);
     //Print  the first Char with a certain font
     tmpStr = text;
     //Print each of the other Char at time
@@ -208,7 +195,7 @@ void displayGame2D() {
 	}
 }
 
-void displayGame3D() {
+void displayGame3D(bool drawPlayer) {
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_LIGHTING);
 
@@ -234,7 +221,7 @@ void displayGame3D() {
 
 	//Desenha a pista
 	glPushMatrix();
-	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0);
+	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0.1);
 	desenhaRetangulo(linha->largura, linha->altura, linha->fill.r, linha->fill.g, linha->fill.b);
 	glPopMatrix();
 
@@ -250,7 +237,7 @@ void displayGame3D() {
 	}
 
 	//Desenha o jogador
-	if (jogador != NULL) {
+	if (jogador != NULL && drawPlayer) {
 		glPushMatrix();
 		glTranslatef(jogador->getPosicao().x, jogador->getPosicao().y, 0);
 		jogador->desenhar3D();
@@ -294,30 +281,57 @@ void display() {
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//Ativa a visão do modelo
+  //Ativa a visão do modelo
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+  //Cria um viewport para o retrovisor
+  int w = glutGet(GLUT_WINDOW_WIDTH);
+  int h = glutGet(GLUT_WINDOW_HEIGHT);
+  glViewport(0, (GLsizei) h - 200, (GLsizei) w, 200);
+  camera->updateCamera(w, 200);
+
+  double ex = jogador->getPosicao().x;
+  double ey = jogador->getPosicao().y;
+  double ez = jogador->getAltura();
+
+  double px = ex + (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
+  double py = ey - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
+  double pz = 0.9 * jogador->getAltura();
+
+  glPushMatrix();
+  camera->lookAt(ex, ey, ez,
+       px, py, pz,
+       0, 0, 1);
+
+
+  displayGame3D(false);
+  glPopMatrix();
+
+  //Cria o viewport do jogo
+  glViewport(0, 0, (GLsizei) w, (GLsizei) h - 200);
+  camera->updateCamera(w, h - 200);
+
   //Mostra o mapa na tela
-	if (mapActive) {
-		glPushMatrix();
-		displayMap();
-		glPopMatrix();
-	}
+  if (mapActive) {
+    glPushMatrix();
+    displayMap();
+    glPopMatrix();
+  }
 
   char text[300];
 
-	//Desenha o tempo na tela
-	sprintf(text, "Tempo: %02d:%02d:%02d", (int) timerHour, (int) timerMin, (int) timerSeg);
-	printText2D(0.7, 0.98, text, 1, 1, 1);
+  //Desenha o tempo na tela
+  sprintf(text, "Tempo: %02d:%02d:%02d", (int) timerHour, (int) timerMin, (int) timerSeg);
+  printText2D(0.7, 0.98, text, 1, 1, 1);
 
-	if (gameOver) {
-		if (gameWon)
-		  sprintf(text, "Voce venceu");
-		else
-		  sprintf(text, "Voce perdeu");
-		printText2D(0.44, 0.5, text, 1, 1, 1);
-	}
+  if (gameOver) {
+    if (gameWon)
+      sprintf(text, "Voce venceu");
+    else
+      sprintf(text, "Voce perdeu");
+    printText2D(0.44, 0.5, text, 1, 1, 1);
+  }
 
 	glPushMatrix();
 
@@ -330,7 +344,7 @@ void display() {
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
 	glPushMatrix();
-	displayGame3D();
+	displayGame3D(true);
 	glPopMatrix();
 
 	glPopMatrix();

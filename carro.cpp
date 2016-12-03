@@ -89,7 +89,7 @@ double Carro::getLengthCanhao() {
 }
 
 double Carro::getVerticalAdjCanhao() {
-	return 0.5;
+	return 0.45;
 }
 
 double* Carro::getEscala() {
@@ -406,7 +406,8 @@ double** Carro::calcularPontosCanhao() {
 										{0.0, 0.0, 0.0, 1.0}
 	};
 
-	double saidaCanhaoRelacaoCanhao[] = {0.0, this->getVerticalAdjCanhao(), this->getLengthCanhao(), 1.0};
+	double saidaCanhaoRelacaoCanhao[] = {-0.025, this->getVerticalAdjCanhao(), this->getLengthCanhao(), 1.0};
+	double saidaCanhaoParalelaRelacaoCanhao[] = {-0.025, 0.0, this->getLengthCanhao(), 1.0};
 
 	//Ordem das matrizes: TM3R4R5
 
@@ -451,14 +452,23 @@ double** Carro::calcularPontosCanhao() {
 		}
 	}
 
+	double* saidaCanhaoParalela = new double[4];
+	for (i = 0; i < 4; i++) {
+		saidaCanhaoParalela[i] = 0.0;
+		for (j = 0; j < 4; j++) {
+			saidaCanhaoParalela[i] += m7[i][j] * saidaCanhaoParalelaRelacaoCanhao[j];
+		}
+	}
+
 	deleteMat(m3, 4);
 	deleteMat(m5, 4);
 	deleteMat(m6, 4);
 	deleteMat(m7, 4);
 
-	double** ptr = new double*[2];
+	double** ptr = new double*[3];
 	ptr[0] = saidaCanhaoGlobal;
 	ptr[1] = origemCanhaoGlobal;
+	ptr[2] = saidaCanhaoParalela;
 
 	delete [] canhaoProp;
 	delete [] scale;
@@ -481,7 +491,7 @@ Tiro* Carro::atirar() {
 
 	Tiro* novoTiro = new Tiro(p, CANHAO_WIDTH * scale[0], _velTiro, anguloCarro + anguloCanhaoH + 90, -anguloCanhaoV);
 
-	deleteMat(ptr, 2);
+	deleteMat(ptr, 3);
 	delete [] scale;
 
 	return novoTiro;
@@ -513,33 +523,6 @@ void Carro::desenhaAcopl2D(double width, double height, double proportion, int t
 		glVertex2f(direction * (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, 0);
 		glVertex2f(direction* (_posRanhuras - DIST_RANHURAS) * RODA_WIDTH, RODA_HEIGHT);
 	glEnd();
-	glPopMatrix();
-}
-
-void Carro::desenhaAcopl3D(double width, double height, double proportion, int top, double angulo) {
-	if (!top)
-		top = -1;
-	else
-		top = 1;
-
-	double acoplRadius = ACOPL_WIDTH / 2.0;
-	double acoplLength = ACOPL_HEIGHT;
-	double wheelRadius = RODA_WIDTH / 2.0;
-	double wheelLength = RODA_HEIGHT;
-
-	glPushMatrix();
-	//Desenha o acoplamento
-	glTranslatef(width * -sin(angulo * DEG2RAD)/2, top*height*proportion/2, 0);
-	glRotatef(angulo, 0, 0, 1);
-	glColor3f(corRodas[0], corRodas[1], corRodas[2]);
-	DrawCylinder(acoplRadius, acoplLength);
-
-	//Desenha a roda
-	glTranslatef(0, acoplLength, 0);
-	if (top == 1)
-		glRotatef(this->getAngRodas(), 0, 0, 1);
-	glRotatef(this->getAngRodasGiro(), 0, 1, 0);
-	DrawCylinder(wheelRadius, wheelLength);
 	glPopMatrix();
 }
 

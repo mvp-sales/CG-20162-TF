@@ -102,7 +102,6 @@ class Carro {
 		Obj *chassi, *interior, *engine, *bodypart, *frontwheel, *backwheel, *cannon;
 
 		void desenhaAcopl2D(double width, double height, double proportion, int top, double angulo);
-		void desenhaAcopl3D(double width, double height, double proportion, int top, double angulo);
 
 	public:
 		Carro() {
