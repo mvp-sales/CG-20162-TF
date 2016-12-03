@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/freeglut.h>
+#include "carro.h"
 
 #define MAX_ANGLE_VERTICAL 90
 #define MAX_ANGLE_HORIZONTAL 180
@@ -36,6 +37,7 @@ class Camera {
 		int getAngleHorizontal();
 		void giroVertical(int value);
 		void giroHorizontal(int value);
+		void adjustCamera(CarroJogador* jogador);
 		void toggleCamera(int cameraVision);
 		void updateCamera(int w, int h);
 		void lookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez,

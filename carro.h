@@ -80,24 +80,28 @@ class Carro {
 		double _angRodasGiro;
 		double _posRanhuras;
 		bool _isPlayer;
+
 		GLfloat corChassis[3];
 		GLfloat matEmissionChassis[4];
 		GLfloat matColorAChassis[4];
 		GLfloat matColorDChassis[4];
 		GLfloat matSpecularChassis[4];
 		GLfloat matShininessChassis[1];
+
 		GLfloat corRodas[3];
 		GLfloat matEmissionRodas[4];
 		GLfloat matColorARodas[4];
 		GLfloat matColorDRodas[4];
 		GLfloat matSpecularRodas[4];
 		GLfloat matShininessRodas[1];
+
 		GLfloat corCanhao[3];
 		GLfloat matEmissionCanhao[4];
 		GLfloat matColorACanhao[4];
 		GLfloat matColorDCanhao[4];
 		GLfloat matSpecularCanhao[4];
 		GLfloat matShininessCanhao[1];
+
 		GLuint texturas[5];
 		Obj *chassi, *interior, *engine, *bodypart, *frontwheel, *backwheel, *cannon;
 
@@ -128,6 +132,7 @@ class Carro {
 		Ponto getPosicao();
 		double getLengthCanhao();
 		double* getProporcaoCanhao();
+		double* getProporcaoFarol();
 		double getVerticalAdjCanhao();
 		double getRaio();
 		double getVelCarro();
@@ -152,6 +157,7 @@ class Carro {
 		void virarCanhaoV(double ang);
 		void virarCarro(double taxa, GLdouble timeDiff);
 		void moverRanhuras(int direction, GLdouble timeDiff);
+		double* calcularNovaPosicao(double x, double y, double z);
 		double** calcularPontosCanhao();
 		Tiro* atirar();
 		void desenhar2D();
@@ -172,15 +178,15 @@ class CarroJogador : public Carro {
 			corCanhao[2] = 0.1;
 			for (int i = 0; i < 4; i++) {
 				if (i < 3) {
-					matColorAChassis[i] = 1;
+					matColorAChassis[i] = 0.2;
 					matColorDChassis[i] = 1;
 					matColorARodas[i] = 0.2;
 					matColorDRodas[i] = 0.2;
 					matColorACanhao[i] = 0.2;
 					matColorDCanhao[i] = 0.2;
-					matEmissionCanhao[i] = 0.3;
-					matEmissionRodas[i] = 0.3;
-					matEmissionChassis[i] = 1;
+					matEmissionCanhao[i] = 0.1;
+					matEmissionRodas[i] = 0.1;
+					matEmissionChassis[i] = 0.1;
 				}
 				else {
 					matColorAChassis[i] = 1;

@@ -11,9 +11,11 @@ Circulo* pistaInterna = (Circulo*) malloc(sizeof(Circulo));
 list<CarroInimigo*> inimigos;
 CarroJogador* jogador = new CarroJogador();
 list<Tiro*> tiros;
-Camera* camera = new Camera(2, 60, 1, 750);
+Camera* camera = new Camera(3, 60, 1, 750);
 GLUquadric* o = gluNewQuadric();
 GLUquadric* obj2d = gluNewQuadric();
+GLuint texturaPista;
+GLuint texturaParede;
 
 //Dimensões da janela
 double janelaLarg;
@@ -57,72 +59,21 @@ void adjustCamera() {
   char text[300];
 
   if (camera->getCurrentCamera() == 1) {
-    //Câmera no cockpit (ajustar)
+    //Câmera no cockpit
     sprintf(text, "Cockpit Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-
-    double ex = jogador->getPosicao().x;
-    double ey = jogador->getPosicao().y;
-    double ez = jogador->getAltura();
-
-    double px = ex - (jogador->getCirculo().raio + 60) * sin(jogador->getAngCarro() * DEG2RAD);
-    double py = ey + (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
-    double pz = 0.9 * jogador->getAltura();
-
-    camera->lookAt(ex, ey, ez,
-         px, py, pz,
-         0, 0, 1);
   }
   else if (camera->getCurrentCamera() == 2) {
-    //Câmera do canhão (ajustar)
-
+    //Câmera do canhão
     sprintf(text, "Cannon Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-    double** cannonPoints = jogador->calcularPontosCanhao();
-    double* saida = cannonPoints[0];
-    double* origem = cannonPoints[1];
-    double* saidaParalela = cannonPoints[2];
-    double vetor[3] = {saida[0] - origem[0], saida[1] - origem[1], saida[2] - origem[2]};
-    double distancia = 0.3*jogador->getAltura();
-    double alpha = 90 + jogador->getAngCanhaoV();
-    double zOffset = distancia * sin(alpha * DEG2RAD);
-    double horizontalDistance = distancia * cos(alpha * DEG2RAD);
-    double theta = jogador->getAngCarro() + jogador->getAngCanhaoH();
-    double xOffset = horizontalDistance * sin(theta * DEG2RAD);
-    double yOffset = horizontalDistance * cos(theta * DEG2RAD);
-
-    camera->lookAt(origem[0] + xOffset, origem[1] - yOffset, origem[2]+ zOffset,
-         saidaParalela[0] + xOffset, saidaParalela[1] - yOffset, saidaParalela[2] + zOffset,
-         0, 0, 1);
-
-    deleteMat(cannonPoints, 3);
   }
   else if (camera->getCurrentCamera() == 3) {
     //Câmera atrás do carro, seguindo sua posição
     sprintf(text, "Dynamic Camera");
     printText2D(0.1, 0.1, text, 0, 1, 0);
-
-    const float distCamera = 120;
-    float horDistCamera = distCamera * cos(camera->getAngleVertical() * DEG2RAD);
-    float vertDistCamera = distCamera * sin (camera->getAngleVertical() * DEG2RAD);
-
-    float theta = jogador->getAngCarro() + camera->getAngleHorizontal();
-
-    float xOffsetCamera = horDistCamera * sin(theta * DEG2RAD);
-    float yOffsetCamera = horDistCamera * cos(theta * DEG2RAD);
-
-    double px = jogador->getPosicao().x;
-    double py = jogador->getPosicao().y;
-    double pz = jogador->getAltura();
-
-    double ex = px - xOffsetCamera;
-    double ey = py - yOffsetCamera;
-    double ez = pz + vertDistCamera;
-
-    camera->lookAt(ex, ey, ez,
-         px, py, pz,
-         0, 0, 1);
   }
+  camera->adjustCamera(jogador);
 }
 
 void printText2D(GLfloat x, GLfloat y, char* text, GLdouble r, GLdouble g, GLdouble b)
@@ -195,28 +146,51 @@ void displayGame2D() {
 	}
 }
 
+void desenharPista3D(Circulo* pista) {
+    GLfloat matColor[] = {0.7, 0.6, 0.0,1};
+    GLfloat matSpecular[] = {0.0, 0.0, 0.0, 1};
+    GLfloat matShininess[] = {100.0};
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColor);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
+
+    glEnable(GL_TEXTURE_2D);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, texturaPista);
+    glColor3f(pista->fill.r, pista->fill.g, pista->fill.b);
+    gluQuadricTexture(o, 1);
+    if (pista == pistaExterna)
+      gluDisk(o, pistaInterna->raio, pista->raio, 80, 20);
+    else
+      gluDisk(o, 0, pista->raio, 80, 20);
+
+    glBindTexture(GL_TEXTURE_2D, texturaParede);
+    glColor3f(0, 1, 1);
+    gluQuadricTexture(o, 1);
+    gluCylinder(o, pista->raio, pista->raio, jogador->getAltura() * 8, 80, 20);
+
+    glDisable(GL_TEXTURE_2D);
+
+    glTranslatef(0, 0, jogador->getAltura() * 8);
+    glColor3f(pista->fill.r, pista->fill.g, pista->fill.b);
+    gluDisk(o, 0, pista->raio, 80, 20);
+}
+
 void displayGame3D(bool drawPlayer) {
-  glPushAttrib(GL_ENABLE_BIT);
-  glDisable(GL_LIGHTING);
 
 	//Desenha a pista externa
 	glPushMatrix();
 	glTranslatef(pistaExterna->centro.x, pistaExterna->centro.y, 0);
-  glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
-  gluDisk(o, 0, pistaExterna->raio, 30, 3);
-  glColor3f(0, 1, 1);
-  gluCylinder(o, pistaExterna->raio, pistaExterna->raio, jogador->getAltura() * 4, 30, 2);
-  glTranslatef(0, 0, jogador->getAltura() * 4);
-  glColor3f(pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
-  //gluDisk(o, 0, pistaExterna->raio, 30, 3);
-  //desenhaCirculo(pistaExterna->raio, pistaExterna->fill.r, pistaExterna->fill.g, pistaExterna->fill.b);
+  desenharPista3D(pistaExterna);
 	glPopMatrix();
 
 	//Desenha a pista interna
 	glPushMatrix();
 	glTranslatef(pistaInterna->centro.x, pistaInterna->centro.y, 0);
-	glColor3f(pistaInterna->fill.r, pistaInterna->fill.g, pistaInterna->fill.b);
-  gluCylinder(o, pistaInterna->raio, pistaInterna->raio, jogador->getAltura() * 2, 30, 2);
+  desenharPista3D(pistaInterna);
 	glPopMatrix();
 
 	//Desenha a pista
@@ -224,8 +198,6 @@ void displayGame3D(bool drawPlayer) {
 	glTranslatef(linha->vEsqSup.x + linha->largura/2, linha->vEsqSup.y - linha->altura, 0.1);
 	desenhaRetangulo(linha->largura, linha->altura, linha->fill.r, linha->fill.g, linha->fill.b);
 	glPopMatrix();
-
-  glPopAttrib();
 
 	//Desenha o tiro
 	for(list<Tiro*>::iterator it = tiros.begin(); it != tiros.end(); ++it) {
@@ -275,6 +247,49 @@ void displayMap() {
 	glMatrixMode(GL_MODELVIEW);
 }
 
+void applyLight() {
+  GLfloat light0_position[] = {0, 0, 80, 1};
+  GLfloat light0_ambient[] = {0.6, 0.2,0.0, 1};
+  GLfloat light0_diffuse[] = {1, 1,0.0, 1};
+  glLightfv(GL_LIGHT0, GL_AMBIENT, light0_ambient);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
+  glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+
+  double* posicao = jogador->getProporcaoFarol();
+  double* farol1 = jogador->calcularNovaPosicao(posicao[0], posicao[1], posicao[2]);
+  double* farol2 = jogador->calcularNovaPosicao(-posicao[0], posicao[1], posicao[2]);
+
+  GLfloat lx = -sin(jogador->getAngCarro() * DEG2RAD);
+  GLfloat ly = cos(jogador->getAngCarro() * DEG2RAD);
+
+  GLfloat light1_position[] = {(GLfloat)farol1[0], (GLfloat)farol1[1], (GLfloat)farol1[2], 1};
+  GLfloat light2_position[] = {(GLfloat)farol2[0], (GLfloat)farol2[1], (GLfloat)farol2[2], 1};
+  GLfloat light1_direction[] = {lx, ly, 0.0};
+  GLfloat light1_ambient[] = {1, 1, 0.0, 1};
+  GLfloat light1_diffuse[] = {1, 1, 0.0, 1};
+  GLfloat light1_cutoff = 30;
+  glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient);
+  glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
+  glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
+  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light1_direction);
+  glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 30);
+  glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, light1_cutoff);
+  glLightfv(GL_LIGHT2, GL_AMBIENT, light1_ambient);
+  glLightfv(GL_LIGHT2, GL_DIFFUSE, light1_diffuse);
+  glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
+  glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light1_direction);
+  glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, light1_cutoff);
+  glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, 30);
+
+  delete [] posicao;
+  delete [] farol1;
+  delete [] farol2;
+}
+
+void nightLight() {
+
+}
+
 //Funcao que sera chamada toda vez que a janela for repintada.
 void display() {
 	//Limpa a tela com a cor especificada
@@ -299,14 +314,17 @@ void display() {
   double py = ey - (jogador->getCirculo().raio + 60) * cos(jogador->getAngCarro() * DEG2RAD);
   double pz = 0.9 * jogador->getAltura();
 
-  glPushMatrix();
   camera->lookAt(ex, ey, ez,
        px, py, pz,
        0, 0, 1);
 
+  applyLight();
 
   displayGame3D(false);
-  glPopMatrix();
+
+  //Ativa a visão do modelo
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
 
   //Cria o viewport do jogo
   glViewport(0, 0, (GLsizei) w, (GLsizei) h - 200);
@@ -333,20 +351,12 @@ void display() {
     printText2D(0.44, 0.5, text, 1, 1, 1);
   }
 
-	glPushMatrix();
-
   adjustCamera();
 
-
-  GLfloat light_position[] = {0, 0, 80, 1};
-  GLfloat light_ambient[] = {0.8, 0.6, 0.1, 1};
-  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  applyLight();
 
 	glPushMatrix();
 	displayGame3D(true);
-	glPopMatrix();
-
 	glPopMatrix();
 
   //Desenha na tela
@@ -359,30 +369,41 @@ void keyRelease(unsigned char key, int x, int y) {
 
 void keyPress(unsigned char key, int x, int y) {
 	keyState[key] = 1;
-
-	switch(key) {
-		case '1':
-		case '2':
-		case '3':
-			camera->toggleCamera((int)key - (int)'0');
-			break;
-		case 'm':
-		case 'M':
-			mapActive = !mapActive;
-      break;
-    case 'n':
-    case 'N':
-      nightMode = !nightMode;
-      break;
-    case 'l':
-    case 'L':
-      if (!lightEnabled)
-        glEnable(GL_LIGHTING);
-      else
-        glDisable(GL_LIGHTING);
-      lightEnabled = !lightEnabled;
-			break;
-	}
+  if (jogador != NULL) {
+  	switch(key) {
+  		case '1':
+  		case '2':
+  		case '3':
+  			camera->toggleCamera((int)key - (int)'0');
+  			break;
+  		case 'm':
+  		case 'M':
+  			mapActive = !mapActive;
+        break;
+      case 'n':
+      case 'N':
+        if (!nightMode) {
+          glDisable(GL_LIGHT0);
+          glEnable(GL_LIGHT1);
+          glEnable(GL_LIGHT2);
+        }
+        else {
+          glEnable(GL_LIGHT0);
+          glDisable(GL_LIGHT1);
+          glDisable(GL_LIGHT2);
+        }
+        nightMode = !nightMode;
+        break;
+      case 'l':
+      case 'L':
+        if (!lightEnabled)
+          glEnable(GL_LIGHTING);
+        else
+          glDisable(GL_LIGHTING);
+        lightEnabled = !lightEnabled;
+  			break;
+  	}
+  }
 
 	if (!gameStart && (key == 'W' || key == 'w')) {
 		gameStart = true;
@@ -587,6 +608,8 @@ void init() {
       LoadTexture("Texturas/InterceptorTexturas/InterceptorInterior.bmp"),
       LoadTexture("Texturas/InterceptorTexturas/InterceptorWheel.bmp")
     };
+    texturaPista = LoadTexture("Texturas/CenaTexturas/RoadTexture.bmp");
+    texturaParede = LoadTexture("Texturas/CenaTexturas/WallTexture.bmp");
     for(list<CarroInimigo*>::iterator it = inimigos.begin(); it != inimigos.end(); ++it) {
   		CarroInimigo* t = *it;
   		t->setTexturas(enTextures);

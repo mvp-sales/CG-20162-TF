@@ -108,6 +108,25 @@ double* Carro::getEscala() {
 	return scale;
 }
 
+double* Carro::getProporcaoFarol() {
+	double* prop = new double[3];
+	double adjustX, adjustY, adjustZ;
+	if (this->isPlayer()) {
+		adjustX = 2;
+		adjustY = 0.76;
+		adjustZ = 3.15;
+	}
+	else {
+		adjustX = 1.98;
+		adjustY = 0.96;
+		adjustZ = 3.16;
+	}
+	prop[0] = adjustX - 0.7;
+	prop[1] = adjustY + 0.8;
+	prop[2] = adjustZ - 0.8;
+	return prop;
+}
+
 double Carro::getVelCarro() {
 	return _velCarro;
 }
@@ -285,6 +304,104 @@ void Carro::moverRanhuras(int direction, GLdouble timeDiff) {
 		_posRanhuras = 0;
 	else if ((_posRanhuras - DIST_RANHURAS) < -DIST_RANHURAS)
 		_posRanhuras = DIST_RANHURAS;
+}
+
+double* Carro::calcularNovaPosicao(double x, double y, double z) {
+	const double anguloCarro = this->getAngCarro();
+	double* scale = this->getEscala();
+	double transfMatrixRot1[4][4] = {
+											{1.0, 0.0, 0.0, 0.0},
+											{0, cos(90 * DEG2RAD), -sin(90 * DEG2RAD), 0},
+											{0, sin(90 * DEG2RAD), cos(90 * DEG2RAD), 0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	double transfMatrixRot2[4][4] = {
+											{cos(180 * DEG2RAD), 0.0, sin(180 * DEG2RAD), 0},
+											{0.0, 1.0, 0.0, 0.0},
+											{-sin(180 * DEG2RAD), 0.0, cos(180 * DEG2RAD), 0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	double transfMatrixCarroRot[4][4] = {
+											{cos(anguloCarro * DEG2RAD), 0.0, sin(anguloCarro * DEG2RAD), 0},
+											{0.0, 1.0, 0.0, 0.0},
+											{-sin(anguloCarro * DEG2RAD), 0.0, cos(anguloCarro * DEG2RAD), 0},
+											{0.0, 0.0, 0.0, 1.0}
+										};
+	double transfEscala[4][4] = {
+		{scale[0], 0, 0, 0},
+		{0, scale[1], 0, 0},
+		{0, 0, scale[2], 0},
+		{0, 0, 0, 1}
+	};
+	double transfTranslacao[4][4] = {
+		{1, 0, 0, _circ->centro.x},
+		{0, 1, 0, _circ->centro.y},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}
+	};
+	double pontoRelativo[4] = {x, y, z, 1};
+
+	//Ordem de operações: TSR1R2R3
+
+	int i,j,k;
+	double** m1 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m1[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m1[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m1[i][j] += transfMatrixRot1[i][k] * transfMatrixRot2[k][j];
+			}
+		}
+	}
+
+	double** m2 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m2[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m2[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m2[i][j] += m1[i][k] * transfMatrixCarroRot[k][j];
+			}
+		}
+	}
+
+	double** m3 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m3[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m3[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m3[i][j] += transfEscala[i][k] * m2[k][j];
+			}
+		}
+	}
+
+	double** m4 = new double*[4];
+	for (i = 0; i < 4; i++) {
+		m4[i] = new double[4];
+		for (j = 0; j < 4; j++) {
+			m4[i][j] = 0.0;
+			for(k = 0; k < 4; k++) {
+				m4[i][j] += transfTranslacao[i][k] * m3[k][j];
+			}
+		}
+	}
+
+	double* pontoGlobal = new double[4];
+	for (i = 0; i < 4; i++) {
+		pontoGlobal[i] = 0.0;
+		for (j = 0; j < 4; j++) {
+			pontoGlobal[i] += m4[i][j] * pontoRelativo[j];
+		}
+	}
+
+	deleteMat(m1, 4);
+	deleteMat(m2, 4);
+	deleteMat(m3, 4);
+	deleteMat(m4, 4);
+	delete [] scale;
+	return pontoGlobal;
 }
 
 double** Carro::calcularPontosCanhao() {
@@ -577,7 +694,7 @@ void Carro::desenhar3D() {
 		glRotatef(this->getAngCarro(), 0, 1, 0);
 
 		//Desenha a base
-		glColor3f(1,1,1);//corChassis[0], corChassis[1], corChassis[2]);
+		glColor3f(1,1,1);
 		this->desenharBodyPart();
 		this->desenharInterior();
 		this->desenharEngine();
@@ -601,7 +718,7 @@ void Carro::desenhar3D() {
 			glTranslatef(adjustX, adjustY, adjustZ);
 			glRotatef(this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
-			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
@@ -610,7 +727,7 @@ void Carro::desenhar3D() {
 			glTranslatef(adjustX, adjustY, adjustZ);
 			glRotatef(-this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
-			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
@@ -618,7 +735,7 @@ void Carro::desenhar3D() {
 		glPushMatrix();
 			glTranslatef(adjustX, adjustY, -adjustZ);
 			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
-			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
@@ -626,7 +743,7 @@ void Carro::desenhar3D() {
 			glScalef(-1, 1, 1);
 			glTranslatef(adjustX, adjustY, -adjustZ);
 			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
-			glColor3f(corRodas[0], corRodas[1], corRodas[2]);
+			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
 		glPopMatrix();
 
