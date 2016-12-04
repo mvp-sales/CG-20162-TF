@@ -133,6 +133,7 @@ class Carro {
 		double getLengthCanhao();
 		double* getProporcaoCanhao();
 		double* getProporcaoFarol();
+		float* getProporcaoRodas();
 		double getVerticalAdjCanhao();
 		double getRaio();
 		double getVelCarro();

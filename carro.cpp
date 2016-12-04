@@ -127,11 +127,41 @@ double* Carro::getProporcaoFarol() {
 	return prop;
 }
 
+float* Carro::getProporcaoRodas() {
+	float* prop = new float[3];
+	float adjustX, adjustY, adjustZ;
+	if (this->isPlayer()) {
+		adjustX = 2;
+		adjustY = 0.76;
+		adjustZ = 3.15;
+	}
+	else {
+		adjustX = 1.98;
+		adjustY = 0.96;
+		adjustZ = 3.16;
+	}
+	prop[0] = adjustX;
+	prop[1] = adjustY;
+	prop[2] = adjustZ;
+	return prop;
+}
+
 double Carro::getVelCarro() {
 	return _velCarro;
 }
 
 double Carro::getTurnRate() {
+	if (this->isPlayer()) {
+		float* wheels = this->getProporcaoRodas();
+		double* front = this->calcularNovaPosicao(wheels[0], wheels[1], wheels[2]);
+		double* back = this->calcularNovaPosicao(wheels[0], wheels[1], -wheels[2]);
+		double distWheel = sqrt(pow(front[0] - back[0],2) + pow(front[1] - back[1],2) + pow(front[2] - back[2],2));
+		double turnRate = this->getAngRodas() * this->getVelCarro() / distWheel;
+		delete [] wheels;
+		delete [] front;
+		delete [] back;
+		return turnRate;
+	}
 	return _angRodas/1000;
 }
 double Carro::getAltura() {
@@ -701,21 +731,10 @@ void Carro::desenhar3D() {
 		this->desenharChassi();
 
 		//Desenha as rodas dianteiras
-
-		double adjustX, adjustY, adjustZ;
-		if (this->isPlayer()) {
-			adjustX = 2;
-			adjustY = 0.76;
-			adjustZ = 3.15;
-		}
-		else {
-			adjustX = 1.98;
-			adjustY = 0.96;
-			adjustZ = 3.16;
-		}
+		float* wheels = this->getProporcaoRodas();
 
 		glPushMatrix();
-			glTranslatef(adjustX, adjustY, adjustZ);
+			glTranslatef(wheels[0], wheels[1], wheels[2]);
 			glRotatef(this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
 			glColor3f(1,1,1);
@@ -724,7 +743,7 @@ void Carro::desenhar3D() {
 
 		glPushMatrix();
 			glScalef(-1, 1, 1);
-			glTranslatef(adjustX, adjustY, adjustZ);
+			glTranslatef(wheels[0], wheels[1], wheels[2]);
 			glRotatef(-this->getAngRodas(), 0, 1, 0);
 			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
 			glColor3f(1,1,1);
@@ -733,7 +752,7 @@ void Carro::desenhar3D() {
 
 		//Desenha as rodas traseiras
 		glPushMatrix();
-			glTranslatef(adjustX, adjustY, -adjustZ);
+			glTranslatef(wheels[0], wheels[1], -wheels[2]);
 			glRotatef(this->getAngRodasGiro(), 1, 0, 0);
 			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
@@ -741,11 +760,13 @@ void Carro::desenhar3D() {
 
 		glPushMatrix();
 			glScalef(-1, 1, 1);
-			glTranslatef(adjustX, adjustY, -adjustZ);
+			glTranslatef(wheels[0], wheels[1], -wheels[2]);
 			glRotatef(this->getAngRodasGiro(), -1, 0, 0);
 			glColor3f(1,1,1);
 			this->desenharRoda(frontwheel);
 		glPopMatrix();
+
+		delete [] wheels;
 
 		//Desenha o canhão
 		glPushMatrix();
@@ -897,5 +918,9 @@ void Tiro::desenhar() {
 };
 
 void Tiro::desenhar3D() {
+	GLfloat matColor[] = {1.0, 1.0, 1.0,1};
+	GLfloat matSpecular[] = {1.0, 1.0, 1.0, 1};
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColor);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
 	gluSphere(this->getEsfera(), this->getCirculo().raio, 30, 30);
 }

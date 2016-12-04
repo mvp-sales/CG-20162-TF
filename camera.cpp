@@ -41,6 +41,9 @@ void Camera::giroHorizontal(int value) {
 
 void Camera::adjustCamera(CarroJogador* jogador) {
 
+	if (jogador == NULL)
+		return;
+
   if (this->getCurrentCamera() == 1) {
     //Câmera no cockpit
 
