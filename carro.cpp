@@ -922,5 +922,6 @@ void Tiro::desenhar3D() {
 	GLfloat matSpecular[] = {1.0, 1.0, 1.0, 1};
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColor);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
+	glColor3f(1,1,1);
 	gluSphere(this->getEsfera(), this->getCirculo().raio, 30, 30);
 }

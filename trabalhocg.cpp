@@ -21,6 +21,7 @@ GLuint texturaParede;
 double janelaLarg;
 double janelaAlt;
 double alturaPista;
+Ponto origemJogador;
 
 //Atributos dos inimigos
 EnemyAttr* enemyAttributes;
@@ -449,6 +450,7 @@ void gameRun(GLdouble currentTime, GLdouble timeDifference) {
 			jogador->setPosicao(previousPos); //retorna à posição original
 		else
 			jogador->virarCarro(jogador->getTurnRate() * direction, timeDifference);
+    origemJogador = jogador->getPosicao();
 	}
 
 	//Atualiza os tiros e confere se algum carro foi acertado

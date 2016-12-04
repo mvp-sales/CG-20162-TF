@@ -88,7 +88,7 @@ void Camera::adjustCamera(CarroJogador* jogador) {
     float horDistCamera = distCamera * cos(this->getAngleVertical() * DEG2RAD);
     float vertDistCamera = distCamera * sin (this->getAngleVertical() * DEG2RAD);
 
-    float theta = jogador->getAngCarro() + this->getAngleHorizontal();
+    float theta = jogador->getAngCarro() + this->getAngleHorizontal() + 180;
 
     float xOffsetCamera = horDistCamera * sin(theta * DEG2RAD);
     float yOffsetCamera = horDistCamera * cos(theta * DEG2RAD);
@@ -98,7 +98,7 @@ void Camera::adjustCamera(CarroJogador* jogador) {
     double pz = jogador->getAltura();
 
     double ex = px - xOffsetCamera;
-    double ey = py - yOffsetCamera;
+    double ey = py + yOffsetCamera;
     double ez = pz + vertDistCamera;
 
     this->lookAt(ex, ey, ez,
